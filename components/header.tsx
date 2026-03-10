@@ -5,6 +5,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { DiscordIcon } from "@/components/discord-icon"
+import { siteConfig } from "@/lib/site-config"
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -50,9 +51,11 @@ export function Header() {
               Sign In
             </Button>
           </Link>
-          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <DiscordIcon className="mr-2 h-4 w-4" />
-            Add to Discord
+          <Button size="sm" asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <a href={siteConfig.discordInviteUrl} target="_blank" rel="noopener noreferrer">
+              <DiscordIcon className="mr-2 h-4 w-4" />
+              Add to Discord
+            </a>
           </Button>
         </div>
 
@@ -84,9 +87,11 @@ export function Header() {
                   Sign In
                 </Button>
               </Link>
-              <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                <DiscordIcon className="mr-2 h-4 w-4" />
-                Add to Discord
+              <Button size="sm" asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <a href={siteConfig.discordInviteUrl} target="_blank" rel="noopener noreferrer">
+                  <DiscordIcon className="mr-2 h-4 w-4" />
+                  Add to Discord
+                </a>
               </Button>
             </div>
           </nav>

@@ -1,6 +1,8 @@
 import Image from "next/image"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { DiscordIcon } from "@/components/discord-icon"
+import { siteConfig } from "@/lib/site-config"
 
 export function Hero() {
   return (
@@ -68,13 +70,16 @@ export function Hero() {
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button
                 size="lg"
+                asChild
                 className="bg-primary font-sans font-medium text-primary-foreground hover:bg-primary/90"
               >
-                <DiscordIcon className="mr-2 h-5 w-5" />
-                Add to Discord
+                <a href={siteConfig.discordInviteUrl} target="_blank" rel="noopener noreferrer">
+                  <DiscordIcon className="mr-2 h-5 w-5" />
+                  Add to Discord
+                </a>
               </Button>
-              <Button size="lg" variant="outline" className="border-border/60 font-sans font-medium">
-                View Documentation
+              <Button size="lg" variant="outline" asChild className="border-border/60 font-sans font-medium">
+                <Link href={siteConfig.docsUrl}>View Documentation</Link>
               </Button>
             </div>
           </div>

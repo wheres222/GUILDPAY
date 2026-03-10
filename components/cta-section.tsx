@@ -1,5 +1,7 @@
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { DiscordIcon } from "@/components/discord-icon"
+import { siteConfig } from "@/lib/site-config"
 
 export function CTASection() {
   return (
@@ -25,17 +27,21 @@ export function CTASection() {
             <Button
               size="lg"
               variant="secondary"
+              asChild
               className="bg-white font-sans font-medium text-primary hover:bg-white/90"
             >
-              <DiscordIcon className="mr-2 h-5 w-5" />
-              Add to Discord
+              <a href={siteConfig.discordInviteUrl} target="_blank" rel="noopener noreferrer">
+                <DiscordIcon className="mr-2 h-5 w-5" />
+                Add to Discord
+              </a>
             </Button>
             <Button
               size="lg"
               variant="ghost"
+              asChild
               className="font-sans font-medium text-primary-foreground hover:bg-white/10 hover:text-primary-foreground"
             >
-              View Pricing
+              <Link href="/pricing">View Pricing</Link>
             </Button>
           </div>
         </div>

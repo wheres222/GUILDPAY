@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { Plus, Webhook, MoreHorizontal, Edit, Trash2, Copy, CheckCircle, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"

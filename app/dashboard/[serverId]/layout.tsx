@@ -61,10 +61,11 @@ const navItems: NavItem[] = [
 
 function SidebarNavItem({ item, serverId, onNavigate }: { item: NavItem; serverId: string; onNavigate?: () => void }) {
   const pathname = usePathname()
-  const [isOpen, setIsOpen] = useState(false)
   const baseHref = `/dashboard/${serverId}${item.href}`
   const isActive = pathname === baseHref || pathname.startsWith(baseHref + "/")
   const hasChildren = item.children && item.children.length > 0
+  const [isOpen, setIsOpen] = useState(false)
+  const open = isOpen || isActive
 
   return (
     <div>
@@ -85,7 +86,7 @@ function SidebarNavItem({ item, serverId, onNavigate }: { item: NavItem; serverI
           <ChevronDown
             className={cn(
               "h-4 w-4 transition-transform duration-200",
-              isOpen && "rotate-180"
+              open && "rotate-180"
             )}
           />
         </button>
@@ -109,7 +110,7 @@ function SidebarNavItem({ item, serverId, onNavigate }: { item: NavItem; serverI
         <div
           className={cn(
             "grid transition-all duration-200 ease-out",
-            isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+            open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
           )}
         >
           <div className="overflow-hidden">

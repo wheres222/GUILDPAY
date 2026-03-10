@@ -1,6 +1,6 @@
 "use client"
 
-import { Save, Eye, Palette, Layout, Type, Image } from "lucide-react"
+import { Save, Eye, Palette, Layout, Image as ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -40,7 +40,7 @@ export default function StorefrontPage() {
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                  <Image className="h-5 w-5 text-primary" />
+                  <ImageIcon className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <CardTitle
@@ -62,7 +62,7 @@ export default function StorefrontPage() {
                 </label>
                 <div className="flex items-center gap-4">
                   <div className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted">
-                    <Image className="h-6 w-6 text-muted-foreground" />
+                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <Button variant="outline" size="sm" className="border-border/60">
                     Upload Logo
@@ -75,7 +75,7 @@ export default function StorefrontPage() {
                 </label>
                 <div className="flex h-32 items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted">
                   <div className="text-center">
-                    <Image className="mx-auto h-8 w-8 text-muted-foreground" />
+                    <ImageIcon className="mx-auto h-8 w-8 text-muted-foreground" />
                     <p className="mt-2 font-sans text-sm text-muted-foreground">
                       Drag and drop or click to upload
                     </p>

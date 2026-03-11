@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
@@ -22,8 +23,14 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 lg:px-8">
         <Link href="/" className="flex items-center gap-2">
-          {/* Logo placeholder - keeps space */}
-          <div className="h-9 w-9 rounded-lg" />
+          <Image
+            src="/guildpay-logo.png"
+            alt="Guild Pay logo"
+            width={36}
+            height={36}
+            className="rounded-lg"
+            priority
+          />
           <span
             className="text-xl font-bold tracking-tight text-foreground"
             style={{ fontFamily: "var(--font-display)" }}

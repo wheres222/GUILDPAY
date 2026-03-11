@@ -17,22 +17,15 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: 'Guild Pay - Discord Marketplace Bot',
   description: 'The ultimate Discord bot for facilitating direct purchases and creating seamless marketplace experiences within your server.',
-  generator: 'v0.app',
   icons: {
     icon: [
       {
         url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
+        sizes: '32x32',
+        type: 'image/png',
       },
     ],
+    shortcut: '/icon-light-32x32.png',
     apple: '/apple-icon.png',
   },
 }

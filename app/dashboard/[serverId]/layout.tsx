@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useParams } from "next/navigation"
 import { signOut } from "next-auth/react"
@@ -178,8 +179,13 @@ export default function DashboardLayout({
             className="flex items-center gap-2"
             onClick={closeMobileMenu}
           >
-            {/* Logo placeholder */}
-            <div className="h-8 w-8 rounded-lg" />
+            <Image
+              src="/guildpay-logo.png"
+              alt="Guild Pay logo"
+              width={32}
+              height={32}
+              className="rounded-lg"
+            />
             <span
               className="text-lg font-bold text-foreground"
               style={{ fontFamily: "var(--font-display)" }}

@@ -24,7 +24,14 @@ async function setupServer(guildId: string, guildName: string, discordUserId: st
   return response.ok
 }
 
-export default async function SelectServerPage() {
+export default async function SelectServerPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ error?: string }>
+}) {
+  const params = await searchParams
+  const setupError = params?.error
+
   const session = await auth()
   if (!session?.accessToken || !session.user?.id) {
     redirect("/signin")
@@ -47,6 +54,12 @@ export default async function SelectServerPage() {
           Choose a server you manage. If the bot is not installed yet, add it first.
         </p>
       </div>
+
+      {setupError ? (
+        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          Setup failed for one server. Check backend API URL and try again.
+        </div>
+      ) : null}
 
       <div className="space-y-3">
         {guildsWithState.map((guild) => (
@@ -71,7 +84,11 @@ export default async function SelectServerPage() {
                     action={async () => {
                       "use server"
                       const ok = await setupServer(guild.id, guild.name, session.user.id)
-                      if (ok) redirect(`/dashboard/${guild.id}`)
+                      if (ok) {
+                        redirect(`/dashboard/${guild.id}`)
+                      }
+
+                      redirect(`/select-server?error=${encodeURIComponent(`setup_failed:${guild.id}`)}`)
                     }}
                   >
                     <Button type="submit">

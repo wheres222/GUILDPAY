@@ -2,13 +2,15 @@ import NextAuth from "next-auth"
 import Discord from "next-auth/providers/discord"
 import { isDiscordOAuthConfigured } from "@/lib/auth-config"
 
-const discordClientId = process.env.AUTH_DISCORD_ID || process.env.DISCORD_CLIENT_ID || ""
-const discordClientSecret = process.env.AUTH_DISCORD_SECRET || process.env.DISCORD_CLIENT_SECRET || ""
+const envTrim = (value?: string) => (value || "").trim()
+
+const discordClientId = envTrim(process.env.AUTH_DISCORD_ID || process.env.DISCORD_CLIENT_ID)
+const discordClientSecret = envTrim(process.env.AUTH_DISCORD_SECRET || process.env.DISCORD_CLIENT_SECRET)
 const oauthConfigured = isDiscordOAuthConfigured()
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  secret: process.env.AUTH_SECRET || "guildpay-dev-secret",
+  secret: envTrim(process.env.AUTH_SECRET) || "guildpay-dev-secret",
   providers: oauthConfigured
     ? [
         Discord({

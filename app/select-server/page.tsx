@@ -37,14 +37,27 @@ export default async function SelectServerPage({
     redirect("/signin")
   }
 
-  const guilds = await fetchManagedGuilds(session.accessToken)
+  let guildsWithState: Array<{
+    id: string
+    name: string
+    icon: string | null
+    permissions: string
+    hasBot: boolean
+  }> = []
+  let guildsError: string | null = null
 
-  const guildsWithState = await Promise.all(
-    guilds.slice(0, 50).map(async (guild) => ({
-      ...guild,
-      hasBot: await checkBotInstalledInGuild(guild.id),
-    }))
-  )
+  try {
+    const guilds = await fetchManagedGuilds(session.accessToken)
+    guildsWithState = await Promise.all(
+      guilds.slice(0, 50).map(async (guild) => ({
+        ...guild,
+        hasBot: await checkBotInstalledInGuild(guild.id),
+      }))
+    )
+  } catch {
+    guildsError =
+      "Could not load Discord servers. Ensure OAuth scopes and env variables are configured correctly."
+  }
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-4xl px-4 py-10 lg:px-8">
@@ -58,6 +71,12 @@ export default async function SelectServerPage({
       {setupError ? (
         <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           Setup failed for one server. Check backend API URL and try again.
+        </div>
+      ) : null}
+
+      {guildsError ? (
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          {guildsError}
         </div>
       ) : null}
 

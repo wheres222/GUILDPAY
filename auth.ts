@@ -1,10 +1,21 @@
 import NextAuth from "next-auth"
 import Discord from "next-auth/providers/discord"
 
+const discordClientId = process.env.AUTH_DISCORD_ID || process.env.DISCORD_CLIENT_ID || ""
+const discordClientSecret = process.env.AUTH_DISCORD_SECRET || process.env.DISCORD_CLIENT_SECRET || ""
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
+  secret: process.env.AUTH_SECRET,
   providers: [
     Discord({
-      allowDangerousEmailAccountLinking: true,
+      clientId: discordClientId,
+      clientSecret: discordClientSecret,
+      authorization: {
+        params: {
+          scope: "identify email guilds",
+        },
+      },
     }),
   ],
   session: {
@@ -12,6 +23,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   pages: {
     signIn: "/signin",
+    error: "/auth/error",
   },
   callbacks: {
     async jwt({ token, account, profile }) {
@@ -25,6 +37,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       session.accessToken = token.accessToken as string | undefined
       return session
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      if (new URL(url).origin === baseUrl) return url
+      return `${baseUrl}/select-server`
     },
   },
 })

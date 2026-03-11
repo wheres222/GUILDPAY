@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { CheckCircle2, PlusCircle } from "lucide-react"
-import { auth } from "@/auth"
+import { auth, signOut } from "@/auth"
 import { buildBotInviteUrl, checkBotInstalledInGuild, fetchManagedGuilds } from "@/lib/discord"
 import { Button } from "@/components/ui/button"
 import { isDiscordOAuthConfigured } from "@/lib/auth-config"
@@ -161,9 +161,16 @@ export default async function SelectServerPage({
         <Link href="/signin" className="text-muted-foreground hover:text-foreground">
           Back to sign in
         </Link>
-        <Link href="/api/auth/signout?callbackUrl=/" className="text-muted-foreground hover:text-foreground">
-          Sign out
-        </Link>
+        <form
+          action={async () => {
+            "use server"
+            await signOut({ redirectTo: "/" })
+          }}
+        >
+          <button type="submit" className="text-muted-foreground hover:text-foreground">
+            Sign out
+          </button>
+        </form>
       </div>
     </div>
   )

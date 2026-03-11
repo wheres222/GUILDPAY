@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useParams } from "next/navigation"
+import { signOut } from "next-auth/react"
 import { useState } from "react"
 import {
   LayoutDashboard,
@@ -240,12 +241,12 @@ export default function DashboardLayout({
                 user@example.com
               </p>
             </div>
-            <Link
-              href="/api/auth/signout?callbackUrl=/"
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
               className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <LogOut className="h-4 w-4" />
-            </Link>
+            </button>
           </div>
         </div>
       </aside>

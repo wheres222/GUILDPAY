@@ -1,177 +1,79 @@
-"use client"
-
-import { Plus, Webhook, MoreHorizontal, Edit, Trash2, Copy, CheckCircle, XCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { apiFetch } from "@/lib/backend-api"
 
-const webhooks = [
-  {
-    id: "1",
-    name: "Order Notifications",
-    url: "https://api.mysite.com/webhooks/orders",
-    events: ["order.created", "order.completed"],
-    status: "Active",
-    lastTriggered: "2 hours ago",
-  },
-  {
-    id: "2",
-    name: "Payment Alerts",
-    url: "https://api.mysite.com/webhooks/payments",
-    events: ["payment.received", "payment.failed"],
-    status: "Active",
-    lastTriggered: "5 hours ago",
-  },
-  {
-    id: "3",
-    name: "Inventory Updates",
-    url: "https://api.mysite.com/webhooks/inventory",
-    events: ["product.stock_low", "product.out_of_stock"],
-    status: "Inactive",
-    lastTriggered: "3 days ago",
-  },
-]
+type WebhookEventsResponse = {
+  success: boolean
+  events: Array<{
+    id: string
+    provider: string
+    eventId: string
+    eventType?: string | null
+    status: string
+    orderId?: string | null
+    failureReason?: string | null
+    receivedAt: string
+    processedAt?: string | null
+  }>
+}
 
-const eventTypes = [
-  { category: "Orders", events: ["order.created", "order.completed", "order.cancelled", "order.refunded"] },
-  { category: "Payments", events: ["payment.received", "payment.failed", "payment.pending"] },
-  { category: "Products", events: ["product.created", "product.updated", "product.stock_low", "product.out_of_stock"] },
-  { category: "Customers", events: ["customer.created", "customer.updated"] },
-]
+export default async function WebhooksPage() {
+  let events: WebhookEventsResponse["events"] = []
+  let error: string | null = null
 
-export default function WebhooksPage() {
+  try {
+    const res = await apiFetch<WebhookEventsResponse>("/webhooks/events?limit=50")
+    events = res.events
+  } catch {
+    error = "Could not load webhook event logs."
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-6 sm:mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1
-            className="text-xl sm:text-2xl font-bold text-foreground"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Webhooks
-          </h1>
-          <p className="mt-1 font-sans text-sm font-normal text-muted-foreground">
-            Configure webhooks to receive real-time notifications
-          </p>
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-foreground sm:text-2xl" style={{ fontFamily: "var(--font-display)" }}>
+          Webhook Events
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Provider event processing timeline (received, verified, processed, failed).
+        </p>
+      </div>
+
+      {error ? (
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          {error}
         </div>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus className="mr-2 h-4 w-4" />
-          Create Webhook
-        </Button>
-      </div>
+      ) : null}
 
-      {/* Webhooks list */}
-      <div className="mb-8 space-y-4">
-        {webhooks.map((webhook) => (
-          <Card key={webhook.id} className="border-border/60">
-            <CardContent className="p-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Webhook className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-sans text-sm font-medium text-foreground">
-                        {webhook.name}
-                      </h3>
-                      <span
-                        className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-sans text-xs font-medium ${
-                          webhook.status === "Active"
-                            ? "bg-green-500/10 text-green-600"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {webhook.status === "Active" ? (
-                          <CheckCircle className="h-3 w-3" />
-                        ) : (
-                          <XCircle className="h-3 w-3" />
-                        )}
-                        {webhook.status}
-                      </span>
-                    </div>
-                    <div className="mt-1 flex items-center gap-2">
-                      <code className="rounded bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground">
-                        {webhook.url}
-                      </code>
-                      <button className="text-muted-foreground hover:text-foreground">
-                        <Copy className="h-3 w-3" />
-                      </button>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {webhook.events.map((event) => (
-                        <span
-                          key={event}
-                          className="rounded bg-secondary px-2 py-0.5 font-sans text-xs text-secondary-foreground"
-                        >
-                          {event}
-                        </span>
-                      ))}
-                    </div>
-                    <p className="mt-2 font-sans text-xs text-muted-foreground">
-                      Last triggered: {webhook.lastTriggered}
-                    </p>
-                  </div>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Available events */}
       <Card className="border-border/60">
         <CardHeader>
-          <CardTitle
-            className="text-lg font-bold"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Available Events
-          </CardTitle>
+          <CardTitle className="text-base">Recent Events</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {eventTypes.map((category) => (
-              <div key={category.category}>
-                <h4 className="mb-2 font-sans text-sm font-medium text-foreground">
-                  {category.category}
-                </h4>
-                <div className="space-y-1">
-                  {category.events.map((event) => (
-                    <code
-                      key={event}
-                      className="block rounded bg-muted px-2 py-1 font-mono text-xs text-muted-foreground"
-                    >
-                      {event}
-                    </code>
-                  ))}
+        <CardContent className="space-y-3">
+          {events.length ? (
+            events.map((event) => (
+              <div key={event.id} className="rounded-lg border border-border/50 p-3">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="font-mono text-xs text-primary">{event.eventId}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(event.receivedAt).toLocaleString()}</p>
                 </div>
+
+                <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-4">
+                  <p>Provider: <span className="font-medium text-foreground">{event.provider}</span></p>
+                  <p>Status: <span className="font-medium text-foreground">{event.status}</span></p>
+                  <p>Type: <span className="font-medium text-foreground">{event.eventType || "-"}</span></p>
+                  <p>Order: <span className="font-mono text-foreground">{event.orderId || "-"}</span></p>
+                </div>
+
+                {event.failureReason ? (
+                  <p className="mt-2 rounded-md bg-red-500/10 px-2 py-1 text-xs text-red-300">
+                    Failure: {event.failureReason}
+                  </p>
+                ) : null}
               </div>
-            ))}
-          </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">No webhook events yet.</p>
+          )}
         </CardContent>
       </Card>
     </div>

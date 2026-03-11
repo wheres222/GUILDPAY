@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { DiscordIcon } from "@/components/discord-icon"
+import { isDiscordOAuthConfigured } from "@/lib/auth-config"
 
 export default async function SignInPage({
   searchParams,
@@ -9,6 +10,7 @@ export default async function SignInPage({
 }) {
   const params = await searchParams
   const callbackUrl = params?.callbackUrl || "/select-server"
+  const oauthConfigured = isDiscordOAuthConfigured()
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background">
       {/* Gradient background */}
@@ -34,15 +36,26 @@ export default async function SignInPage({
         </div>
 
         <div className="rounded-xl border border-border/60 bg-card p-6 shadow-sm">
-          <a href={`/api/auth/signin/discord?callbackUrl=${encodeURIComponent(callbackUrl)}`}>
-            <Button
-              size="lg"
-              className="w-full bg-[#5865F2] font-sans font-medium text-white hover:bg-[#4752c4]"
-            >
-              <DiscordIcon className="mr-2 h-5 w-5" />
-              Continue with Discord
-            </Button>
-          </a>
+          {oauthConfigured ? (
+            <a href={`/api/auth/signin/discord?callbackUrl=${encodeURIComponent(callbackUrl)}`}>
+              <Button
+                size="lg"
+                className="w-full bg-[#5865F2] font-sans font-medium text-white hover:bg-[#4752c4]"
+              >
+                <DiscordIcon className="mr-2 h-5 w-5" />
+                Continue with Discord
+              </Button>
+            </a>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                Discord OAuth is not configured yet. You can still continue in demo mode until env values are set.
+              </div>
+              <Button asChild size="lg" variant="outline" className="w-full">
+                <Link href="/select-server?demo=1">Continue in Demo Mode</Link>
+              </Button>
+            </div>
+          )}
 
           <p className="mt-4 text-center font-sans text-xs font-normal text-muted-foreground">
             By continuing, you agree to our{" "}

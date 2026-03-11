@@ -1,23 +1,27 @@
 import NextAuth from "next-auth"
 import Discord from "next-auth/providers/discord"
+import { isDiscordOAuthConfigured } from "@/lib/auth-config"
 
 const discordClientId = process.env.AUTH_DISCORD_ID || process.env.DISCORD_CLIENT_ID || ""
 const discordClientSecret = process.env.AUTH_DISCORD_SECRET || process.env.DISCORD_CLIENT_SECRET || ""
+const oauthConfigured = isDiscordOAuthConfigured()
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  secret: process.env.AUTH_SECRET,
-  providers: [
-    Discord({
-      clientId: discordClientId,
-      clientSecret: discordClientSecret,
-      authorization: {
-        params: {
-          scope: "identify email guilds",
-        },
-      },
-    }),
-  ],
+  secret: process.env.AUTH_SECRET || "guildpay-dev-secret",
+  providers: oauthConfigured
+    ? [
+        Discord({
+          clientId: discordClientId,
+          clientSecret: discordClientSecret,
+          authorization: {
+            params: {
+              scope: "identify email guilds",
+            },
+          },
+        }),
+      ]
+    : [],
   session: {
     strategy: "jwt",
   },

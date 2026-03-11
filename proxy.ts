@@ -1,11 +1,16 @@
 import { auth } from "@/auth"
 import { NextResponse } from "next/server"
+import { isDiscordOAuthConfigured } from "@/lib/auth-config"
 
 export default auth((req) => {
   const pathname = req.nextUrl.pathname
 
   const protectedPath = pathname.startsWith("/dashboard") || pathname.startsWith("/select-server")
   if (!protectedPath) return NextResponse.next()
+
+  if (!isDiscordOAuthConfigured()) {
+    return NextResponse.next()
+  }
 
   if (!req.auth) {
     const signInUrl = new URL("/signin", req.nextUrl.origin)

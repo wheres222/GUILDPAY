@@ -4,6 +4,7 @@ import { CheckCircle2, PlusCircle } from "lucide-react"
 import { auth } from "@/auth"
 import { buildBotInviteUrl, checkBotInstalledInGuild, fetchManagedGuilds } from "@/lib/discord"
 import { Button } from "@/components/ui/button"
+import { isDiscordOAuthConfigured } from "@/lib/auth-config"
 
 export const dynamic = "force-dynamic"
 
@@ -27,15 +28,25 @@ async function setupServer(guildId: string, guildName: string, discordUserId: st
 export default async function SelectServerPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string }>
+  searchParams?: Promise<{ error?: string; demo?: string }>
 }) {
   const params = await searchParams
   const setupError = params?.error
+  const demoMode = params?.demo === "1"
+  const oauthConfigured = isDiscordOAuthConfigured()
 
   const session = await auth()
-  if (!session?.accessToken || !session.user?.id) {
+  const hasSession = Boolean(session?.accessToken && session.user?.id)
+  if (!hasSession && oauthConfigured && !demoMode) {
     redirect("/signin")
   }
+
+  const demoGuilds = [
+    { id: "demo-1", name: "Demo Storefront", icon: null, permissions: "0", hasBot: true },
+    { id: "demo-2", name: "Demo Community", icon: null, permissions: "0", hasBot: false },
+  ]
+
+  const currentUserId = session?.user?.id || "demo-user"
 
   let guildsWithState: Array<{
     id: string
@@ -46,17 +57,24 @@ export default async function SelectServerPage({
   }> = []
   let guildsError: string | null = null
 
-  try {
-    const guilds = await fetchManagedGuilds(session.accessToken)
-    guildsWithState = await Promise.all(
-      guilds.slice(0, 50).map(async (guild) => ({
-        ...guild,
-        hasBot: await checkBotInstalledInGuild(guild.id),
-      }))
-    )
-  } catch {
-    guildsError =
-      "Could not load Discord servers. Ensure OAuth scopes and env variables are configured correctly."
+  if (hasSession) {
+    try {
+      const guilds = await fetchManagedGuilds(session!.accessToken as string)
+      guildsWithState = await Promise.all(
+        guilds.slice(0, 50).map(async (guild) => ({
+          ...guild,
+          hasBot: await checkBotInstalledInGuild(guild.id),
+        }))
+      )
+    } catch {
+      guildsError =
+        "Could not load Discord servers. Ensure OAuth scopes and env variables are configured correctly."
+    }
+  } else {
+    guildsWithState = demoGuilds
+    guildsError = oauthConfigured
+      ? "No active auth session found. Continue in demo mode or sign in again."
+      : "OAuth not configured yet. Running in demo mode until env values are set."
   }
 
   return (
@@ -102,7 +120,11 @@ export default async function SelectServerPage({
                   <form
                     action={async () => {
                       "use server"
-                      const ok = await setupServer(guild.id, guild.name, session.user.id)
+                      if (!hasSession) {
+                        redirect(`/dashboard/${guild.id}`)
+                      }
+
+                      const ok = await setupServer(guild.id, guild.name, currentUserId)
                       if (ok) {
                         redirect(`/dashboard/${guild.id}`)
                       }

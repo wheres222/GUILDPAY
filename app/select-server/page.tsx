@@ -1,142 +1,111 @@
-"use client"
-
 import Link from "next/link"
-import { useState } from "react"
-import { ChevronDown, Plus, Check } from "lucide-react"
+import { redirect } from "next/navigation"
+import { CheckCircle2, PlusCircle } from "lucide-react"
+import { auth } from "@/auth"
+import { buildBotInviteUrl, checkBotInstalledInGuild, fetchManagedGuilds } from "@/lib/discord"
+import { Button } from "@/components/ui/button"
 
-const mockServers = [
-  {
-    id: "1",
-    name: "Cheatparadise",
-    icon: null,
-    hasBot: true,
-  },
-  {
-    id: "2",
-    name: "Crypto Trading Hub",
-    icon: null,
-    hasBot: true,
-  },
-  {
-    id: "3",
-    name: "NFT Marketplace",
-    icon: null,
-    hasBot: true,
-  },
-  {
-    id: "4",
-    name: "Digital Products Store",
-    icon: null,
-    hasBot: false,
-  },
-  {
-    id: "5",
-    name: "Gaming Community",
-    icon: null,
-    hasBot: false,
-  },
-]
+export const dynamic = "force-dynamic"
 
-export default function SelectServerPage() {
-  const [isOpen, setIsOpen] = useState(true)
-  const [selectedServer, setSelectedServer] = useState(mockServers[0])
+async function setupServer(guildId: string, guildName: string, discordUserId: string) {
+  const apiBase = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api"
 
-  const serversWithBot = mockServers.filter((s) => s.hasBot)
-  const serversWithoutBot = mockServers.filter((s) => !s.hasBot)
+  const response = await fetch(`${apiBase}/setup`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      discordGuildId: guildId,
+      guildName,
+      discordUserId,
+    }),
+    cache: "no-store",
+  })
+
+  return response.ok
+}
+
+export default async function SelectServerPage() {
+  const session = await auth()
+  if (!session?.accessToken || !session.user?.id) {
+    redirect("/signin")
+  }
+
+  const guilds = await fetchManagedGuilds(session.accessToken)
+
+  const guildsWithState = await Promise.all(
+    guilds.slice(0, 50).map(async (guild) => ({
+      ...guild,
+      hasBot: await checkBotInstalledInGuild(guild.id),
+    }))
+  )
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0f1419]">
-      <div className="w-full max-w-xs">
-        {/* Server dropdown */}
-        <div className="overflow-hidden rounded-xl border border-[#1e2730] bg-[#151c24]">
-          {/* Selected server header */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="flex w-full items-center justify-between px-3 py-2.5 transition-colors hover:bg-[#1e2730]"
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/20 text-xs font-bold text-primary">
-                {selectedServer.name.charAt(0)}
-              </div>
-              <span className="text-sm font-medium text-white">
-                {selectedServer.name}
-              </span>
-            </div>
-            <ChevronDown
-              className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
-                isOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
+    <div className="mx-auto min-h-screen w-full max-w-4xl px-4 py-10 lg:px-8">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-foreground">Select a Server</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Choose a server you manage. If the bot is not installed yet, add it first.
+        </p>
+      </div>
 
-          {/* Dropdown content */}
+      <div className="space-y-3">
+        {guildsWithState.map((guild) => (
           <div
-            className={`grid transition-all duration-200 ease-out ${
-              isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-            }`}
+            key={guild.id}
+            className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
           >
-            <div className="overflow-hidden">
-              <div className="border-t border-[#1e2730]">
-                {/* Servers with bot */}
-                {serversWithBot.map((server) => (
-                  <Link
-                    key={server.id}
-                    href={`/dashboard/${server.id}`}
-                    onClick={() => setSelectedServer(server)}
-                    className={`flex items-center justify-between px-3 py-2.5 transition-colors hover:bg-[#1e2730] ${
-                      selectedServer.id === server.id ? "bg-[#1e2730]" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/20 text-xs font-bold text-primary">
-                        {server.name.charAt(0)}
-                      </div>
-                      <span className="text-sm font-medium text-white">
-                        {server.name}
-                      </span>
-                    </div>
-                    {selectedServer.id === server.id && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </Link>
-                ))}
-
-                {/* Divider */}
-                {serversWithoutBot.length > 0 && (
-                  <div className="mx-3 my-2 border-t border-[#1e2730]" />
-                )}
-
-                {/* Servers without bot - add option */}
-                {serversWithoutBot.map((server) => (
-                  <button
-                    key={server.id}
-                    className="flex w-full items-center justify-between px-3 py-2.5 transition-colors hover:bg-[#1e2730]"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-700 text-xs font-bold text-gray-400">
-                        {server.name.charAt(0)}
-                      </div>
-                      <span className="text-sm font-medium text-gray-400">
-                        {server.name}
-                      </span>
-                    </div>
-                    <Plus className="h-4 w-4 text-gray-500" />
-                  </button>
-                ))}
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
+                {guild.name.charAt(0)}
               </div>
+              <div>
+                <p className="font-medium text-foreground">{guild.name}</p>
+                <p className="text-xs text-muted-foreground">Guild ID: {guild.id}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {guild.hasBot ? (
+                <>
+                  <form
+                    action={async () => {
+                      "use server"
+                      const ok = await setupServer(guild.id, guild.name, session.user.id)
+                      if (ok) redirect(`/dashboard/${guild.id}`)
+                    }}
+                  >
+                    <Button type="submit">
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Continue
+                    </Button>
+                  </form>
+                </>
+              ) : (
+                <Button asChild variant="outline">
+                  <a href={buildBotInviteUrl(guild.id)} target="_blank" rel="noopener noreferrer">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Bot
+                  </a>
+                </Button>
+              )}
             </div>
           </div>
-        </div>
+        ))}
+      </div>
 
-        {/* Sign out link */}
-        <div className="mt-4 text-center">
-          <Link
-            href="/"
-            className="text-sm text-gray-500 transition-colors hover:text-gray-300"
-          >
-            Sign out
-          </Link>
+      {guildsWithState.length === 0 && (
+        <div className="rounded-xl border border-border/60 bg-card p-6 text-center text-sm text-muted-foreground">
+          No manageable servers found. Make sure you have &quot;Manage Server&quot; permissions.
         </div>
+      )}
+
+      <div className="mt-8 flex items-center justify-between text-sm">
+        <Link href="/signin" className="text-muted-foreground hover:text-foreground">
+          Back to sign in
+        </Link>
+        <Link href="/api/auth/signout?callbackUrl=/" className="text-muted-foreground hover:text-foreground">
+          Sign out
+        </Link>
       </div>
     </div>
   )

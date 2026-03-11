@@ -2,7 +2,13 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { DiscordIcon } from "@/components/discord-icon"
 
-export default function SignInPage() {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ callbackUrl?: string }>
+}) {
+  const params = await searchParams
+  const callbackUrl = params?.callbackUrl || "/select-server"
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background">
       {/* Gradient background */}
@@ -28,7 +34,7 @@ export default function SignInPage() {
         </div>
 
         <div className="rounded-xl border border-border/60 bg-card p-6 shadow-sm">
-          <Link href="/select-server">
+          <a href={`/api/auth/signin/discord?callbackUrl=${encodeURIComponent(callbackUrl)}`}>
             <Button
               size="lg"
               className="w-full bg-[#5865F2] font-sans font-medium text-white hover:bg-[#4752c4]"
@@ -36,7 +42,7 @@ export default function SignInPage() {
               <DiscordIcon className="mr-2 h-5 w-5" />
               Continue with Discord
             </Button>
-          </Link>
+          </a>
 
           <p className="mt-4 text-center font-sans text-xs font-normal text-muted-foreground">
             By continuing, you agree to our{" "}

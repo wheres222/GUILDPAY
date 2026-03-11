@@ -241,7 +241,7 @@ export default function DashboardLayout({
               </p>
             </div>
             <Link
-              href="/"
+              href="/api/auth/signout?callbackUrl=/"
               className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <LogOut className="h-4 w-4" />

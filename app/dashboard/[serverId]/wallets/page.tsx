@@ -17,8 +17,23 @@ type SummaryResponse = {
 
 type PayoutResponse = {
   success: boolean
-  id: string
-  status: string
+  payout: {
+    id: string
+    status: string
+  }
+}
+
+type PayoutListResponse = {
+  success: boolean
+  payouts: Array<{
+    id: string
+    amountCents: number
+    currency: string
+    walletAddress: string
+    status: string
+    txHash?: string | null
+    createdAt: string
+  }>
 }
 
 export default async function WalletsPage({
@@ -34,11 +49,17 @@ export default async function WalletsPage({
 
   let error: string | null = ctx.error
   let summary: SummaryResponse["summary"] | null = null
+  let payouts: PayoutListResponse["payouts"] = []
 
   if (ctx.sellerId) {
     try {
-      const res = await apiFetch<SummaryResponse>(`/dashboard/seller/${ctx.sellerId}/summary`)
-      summary = res.summary
+      const [summaryRes, payoutRes] = await Promise.all([
+        apiFetch<SummaryResponse>(`/dashboard/seller/${ctx.sellerId}/summary`),
+        apiFetch<PayoutListResponse>(`/payouts/crypto/requests?sellerId=${ctx.sellerId}&limit=20`),
+      ])
+
+      summary = summaryRes.summary
+      payouts = payoutRes.payouts
     } catch {
       error = "Could not load wallet metrics from backend API."
     }
@@ -79,7 +100,7 @@ export default async function WalletsPage({
         <h1 className="text-xl font-bold text-foreground sm:text-2xl" style={{ fontFamily: "var(--font-display)" }}>
           Wallets & Payouts
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Seller balance, platform fees, and payout requests.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Platform fee is taken per order (1–3% by tier), seller net is credited on paid webhook confirmation.</p>
       </div>
 
       {sp?.payout === "requested" ? (
@@ -145,6 +166,34 @@ export default async function WalletsPage({
               <Button type="submit">Submit Payout Request</Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6 border-border/60">
+        <CardHeader>
+          <CardTitle className="text-base">Recent Payout Requests</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {payouts.length ? (
+            payouts.map((payout) => (
+              <div key={payout.id} className="rounded-lg border border-border/50 p-3">
+                <div className="flex items-center justify-between">
+                  <p className="font-mono text-xs text-primary">{payout.id}</p>
+                  <p className="text-xs font-semibold text-foreground">{payout.status}</p>
+                </div>
+                <div className="mt-1 grid gap-1 text-xs text-muted-foreground sm:grid-cols-3">
+                  <p>Amount: <span className="font-medium text-foreground">{formatUsd(payout.amountCents)}</span></p>
+                  <p>Wallet: <span className="font-mono text-foreground">{payout.walletAddress}</span></p>
+                  <p>{new Date(payout.createdAt).toLocaleString()}</p>
+                </div>
+                {payout.txHash ? (
+                  <p className="mt-1 text-xs text-muted-foreground">Tx: <span className="font-mono text-foreground">{payout.txHash}</span></p>
+                ) : null}
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">No payout requests yet.</p>
+          )}
         </CardContent>
       </Card>
     </div>

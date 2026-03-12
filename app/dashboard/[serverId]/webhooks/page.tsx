@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { apiFetch } from "@/lib/backend-api"
+import { resolveDashboardContext } from "@/lib/dashboard-context"
 
 type WebhookEventsResponse = {
   success: boolean
@@ -16,15 +17,20 @@ type WebhookEventsResponse = {
   }>
 }
 
-export default async function WebhooksPage() {
-  let events: WebhookEventsResponse["events"] = []
-  let error: string | null = null
+export default async function WebhooksPage({ params }: { params: Promise<{ serverId: string }> }) {
+  const { serverId } = await params
+  const ctx = await resolveDashboardContext(serverId)
 
-  try {
-    const res = await apiFetch<WebhookEventsResponse>("/webhooks/events?limit=50")
-    events = res.events
-  } catch {
-    error = "Could not load webhook event logs."
+  let events: WebhookEventsResponse["events"] = []
+  let error: string | null = ctx.error
+
+  if (ctx.sellerId) {
+    try {
+      const res = await apiFetch<WebhookEventsResponse>(`/webhooks/events?sellerId=${ctx.sellerId}&limit=50`)
+      events = res.events
+    } catch {
+      error = "Could not load webhook event logs."
+    }
   }
 
   return (

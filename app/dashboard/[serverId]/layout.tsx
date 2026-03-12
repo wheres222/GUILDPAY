@@ -194,7 +194,12 @@ export default function DashboardLayout({
             </span>
           </Link>
           <div className="flex items-center gap-1">
-            <button className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+            <button
+              type="button"
+              disabled
+              title="Notifications panel coming soon"
+              className="cursor-not-allowed rounded-lg p-1.5 text-muted-foreground/60"
+            >
               <Bell className="h-4 w-4" />
             </button>
             <button
@@ -215,9 +220,9 @@ export default function DashboardLayout({
             >
               <div className="flex items-center gap-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
-                  C
+                  {serverId?.charAt(0)?.toUpperCase() || "S"}
                 </div>
-                <span className="truncate text-sm">Crypto Trading Hub</span>
+                <span className="truncate text-sm">Server {serverId}</span>
               </div>
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </Button>
@@ -244,7 +249,7 @@ export default function DashboardLayout({
             </div>
             <div className="flex-1 truncate">
               <p className="truncate text-sm font-medium text-foreground">
-                user@example.com
+                Connected account
               </p>
             </div>
             <button
@@ -271,7 +276,13 @@ export default function DashboardLayout({
             href={`/dashboard/${serverId}`}
             className="flex items-center gap-2"
           >
-            <div className="h-6 w-6 rounded-lg" />
+            <Image
+              src="/guildpay-logo.png"
+              alt="Guild Pay logo"
+              width={24}
+              height={24}
+              className="rounded"
+            />
             <span
               className="text-base font-bold text-foreground"
               style={{ fontFamily: "var(--font-display)" }}

@@ -21,7 +21,6 @@ const footerLinks = {
   ],
   social: [
     { href: "https://discord.com", label: "Discord" },
-    { href: "https://twitter.com", label: "Twitter" },
     { href: "https://github.com", label: "GitHub" },
   ],
 }

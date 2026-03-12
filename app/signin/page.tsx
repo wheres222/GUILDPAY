@@ -1,7 +1,6 @@
 import Link from "next/link"
-import { signIn } from "@/auth"
 import { Button } from "@/components/ui/button"
-import { DiscordIcon } from "@/components/discord-icon"
+import { DiscordSignInButton } from "@/components/auth/discord-signin-button"
 import { isDiscordOAuthConfigured } from "@/lib/auth-config"
 import { computeReadiness } from "@/lib/readiness"
 
@@ -40,21 +39,7 @@ export default async function SignInPage({
 
         <div className="rounded-xl border border-border/60 bg-card p-6 shadow-sm">
           {oauthConfigured ? (
-            <form
-              action={async () => {
-                "use server"
-                await signIn("discord", { redirectTo: callbackUrl })
-              }}
-            >
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full bg-[#5865F2] font-sans font-medium text-white hover:bg-[#4752c4]"
-              >
-                <DiscordIcon className="mr-2 h-5 w-5" />
-                Continue with Discord
-              </Button>
-            </form>
+            <DiscordSignInButton callbackUrl={callbackUrl} />
           ) : (
             <div className="space-y-3">
               <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">

@@ -83,7 +83,7 @@ export default async function SelectServerPage({
   if (confirmGuild && hasSession) {
     const guild = guildsWithState.find((entry) => entry.id === confirmGuild)
 
-    if (guild?.hasBot) {
+    if (guild) {
       const ok = await setupServer(guild.id, guild.name, currentUserId)
       if (ok) {
         redirect(`/dashboard/${guild.id}`)
@@ -91,7 +91,7 @@ export default async function SelectServerPage({
       redirect(`/select-server?error=${encodeURIComponent(`setup_failed:${guild.id}`)}`)
     }
 
-    confirmMessage = "Bot still not detected in that server. Wait a few seconds and press Confirm Added again."
+    confirmMessage = "Server not found in your managed guild list. Refresh and try again."
   }
 
   return (

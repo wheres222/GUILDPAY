@@ -12,6 +12,7 @@ type ProductsResponse = {
     id: string
     name: string
     description?: string | null
+    imageUrl?: string | null
     isActive: boolean
     createdAt: string
     variants: Array<{
@@ -55,6 +56,7 @@ export default async function ProductsPage({
     const serverId = String(formData.get("serverId") || "")
     const name = String(formData.get("name") || "").trim()
     const description = String(formData.get("description") || "").trim()
+    const imageUrl = String(formData.get("imageUrl") || "").trim()
     const priceCents = Number(formData.get("priceCents") || 0)
     const deliveryType = String(formData.get("deliveryType") || "")
     const deliveryValue = String(formData.get("deliveryValue") || "").trim()
@@ -76,6 +78,7 @@ export default async function ProductsPage({
           sellerId: ctx.sellerId,
           name,
           description: description || undefined,
+          imageUrl: imageUrl || undefined,
           priceCents,
           deliveryType,
           deliveryValue: deliveryValue || undefined,
@@ -133,6 +136,42 @@ export default async function ProductsPage({
     }
   }
 
+  async function updateProductAction(formData: FormData) {
+    "use server"
+
+    const serverId = String(formData.get("serverId") || "")
+    const productId = String(formData.get("productId") || "")
+    const name = String(formData.get("name") || "").trim()
+    const description = String(formData.get("description") || "").trim()
+    const imageUrl = String(formData.get("imageUrl") || "").trim()
+    const priceCents = Number(formData.get("priceCents") || 0)
+    const isActive = String(formData.get("isActive") || "") === "on"
+
+    const ctx = await resolveDashboardContext(serverId)
+    if (!ctx.sellerId) {
+      redirect(`/dashboard/${serverId}/products?error=missing_seller`)
+    }
+
+    try {
+      await apiFetch(`/products/${productId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          sellerId: ctx.sellerId,
+          name: name || undefined,
+          description: description || undefined,
+          imageUrl: imageUrl || null,
+          priceCents: priceCents || undefined,
+          isActive,
+        }),
+      })
+
+      revalidatePath(`/dashboard/${serverId}/products`)
+      redirect(`/dashboard/${serverId}/products?product=updated`)
+    } catch {
+      redirect(`/dashboard/${serverId}/products?error=product_update_failed`)
+    }
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6 flex flex-col gap-2">
@@ -153,6 +192,12 @@ export default async function ProductsPage({
       {sp?.panel === "created" ? (
         <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
           Product panel posted successfully.
+        </div>
+      ) : null}
+
+      {sp?.product === "updated" ? (
+        <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
+          Product updated successfully.
         </div>
       ) : null}
 
@@ -190,6 +235,12 @@ export default async function ProductsPage({
               placeholder="Price in cents (e.g., 1999)"
               className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
               required
+            />
+
+            <input
+              name="imageUrl"
+              placeholder="Optional product image URL"
+              className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
             />
 
             <select
@@ -245,6 +296,52 @@ export default async function ProductsPage({
                       Status: <span className="font-medium text-foreground">{product.isActive ? "Active" : "Inactive"}</span>
                     </p>
                   </div>
+
+                  <form action={updateProductAction} className="grid gap-2 rounded-lg border border-border/60 p-3 sm:grid-cols-2">
+                    <input type="hidden" name="serverId" value={serverId} />
+                    <input type="hidden" name="productId" value={product.id} />
+
+                    <input
+                      name="name"
+                      defaultValue={product.name}
+                      placeholder="Product name"
+                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
+                    />
+
+                    <input
+                      name="priceCents"
+                      type="number"
+                      min={1}
+                      step={1}
+                      defaultValue={variant?.priceCents || 0}
+                      placeholder="Price in cents"
+                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
+                    />
+
+                    <input
+                      name="imageUrl"
+                      defaultValue={product.imageUrl || ""}
+                      placeholder="Product image URL"
+                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
+                    />
+
+                    <label className="flex items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm text-foreground">
+                      <input type="checkbox" name="isActive" defaultChecked={product.isActive} />
+                      Product active
+                    </label>
+
+                    <textarea
+                      name="description"
+                      rows={2}
+                      defaultValue={product.description || ""}
+                      placeholder="Product description"
+                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground sm:col-span-2"
+                    />
+
+                    <div className="sm:col-span-2">
+                      <Button type="submit" size="sm" variant="outline">Save Product</Button>
+                    </div>
+                  </form>
 
                   <form action={createPanelAction} className="grid gap-2 rounded-lg border border-border/60 p-3 sm:grid-cols-2">
                     <input type="hidden" name="serverId" value={serverId} />

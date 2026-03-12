@@ -179,13 +179,15 @@ export default function DashboardLayout({
             className="flex items-center gap-2"
             onClick={closeMobileMenu}
           >
-            <Image
-              src="/guildpay-logo.png"
-              alt="Guild Pay logo"
-              width={32}
-              height={32}
-              className="rounded-lg"
-            />
+            <div className="h-8 w-8 overflow-hidden rounded-lg">
+              <Image
+                src="/guildpay-logo.png"
+                alt="Guild Pay logo"
+                width={32}
+                height={32}
+                className="h-full w-full object-cover"
+              />
+            </div>
             <span
               className="text-lg font-bold text-foreground"
               style={{ fontFamily: "var(--font-display)" }}
@@ -276,13 +278,15 @@ export default function DashboardLayout({
             href={`/dashboard/${serverId}`}
             className="flex items-center gap-2"
           >
-            <Image
-              src="/guildpay-logo.png"
-              alt="Guild Pay logo"
-              width={24}
-              height={24}
-              className="rounded"
-            />
+            <div className="h-6 w-6 overflow-hidden rounded">
+              <Image
+                src="/guildpay-logo.png"
+                alt="Guild Pay logo"
+                width={24}
+                height={24}
+                className="h-full w-full object-cover"
+              />
+            </div>
             <span
               className="text-base font-bold text-foreground"
               style={{ fontFamily: "var(--font-display)" }}

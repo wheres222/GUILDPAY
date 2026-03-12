@@ -33,13 +33,15 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:gap-12">
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2">
-              <Image
-                src="/guildpay-logo.png"
-                alt="Guild Pay logo"
-                width={36}
-                height={36}
-                className="rounded-lg"
-              />
+              <div className="h-9 w-9 overflow-hidden rounded-lg">
+                <Image
+                  src="/guildpay-logo.png"
+                  alt="Guild Pay logo"
+                  width={36}
+                  height={36}
+                  className="h-full w-full object-cover"
+                />
+              </div>
               <span
                 className="text-xl font-bold tracking-tight text-foreground"
                 style={{ fontFamily: "var(--font-display)" }}

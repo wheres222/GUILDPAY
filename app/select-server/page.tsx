@@ -28,11 +28,12 @@ async function setupServer(guildId: string, guildName: string, discordUserId: st
 export default async function SelectServerPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string; demo?: string }>
+  searchParams?: Promise<{ error?: string; demo?: string; confirmGuild?: string }>
 }) {
   const params = await searchParams
   const setupError = params?.error
   const demoMode = params?.demo === "1"
+  const confirmGuild = params?.confirmGuild
   const oauthConfigured = isDiscordOAuthConfigured()
 
   const session = await auth()
@@ -77,6 +78,22 @@ export default async function SelectServerPage({
       : "OAuth not configured yet. Running in demo mode until env values are set."
   }
 
+  let confirmMessage: string | null = null
+
+  if (confirmGuild && hasSession) {
+    const guild = guildsWithState.find((entry) => entry.id === confirmGuild)
+
+    if (guild?.hasBot) {
+      const ok = await setupServer(guild.id, guild.name, currentUserId)
+      if (ok) {
+        redirect(`/dashboard/${guild.id}`)
+      }
+      redirect(`/select-server?error=${encodeURIComponent(`setup_failed:${guild.id}`)}`)
+    }
+
+    confirmMessage = "Bot still not detected in that server. Wait a few seconds and press Confirm Added again."
+  }
+
   return (
     <div className="mx-auto min-h-screen w-full max-w-4xl px-4 py-10 lg:px-8">
       <div className="mb-8">
@@ -95,6 +112,12 @@ export default async function SelectServerPage({
       {guildsError ? (
         <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
           {guildsError}
+        </div>
+      ) : null}
+
+      {confirmMessage ? (
+        <div className="mb-4 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
+          {confirmMessage}
         </div>
       ) : null}
 
@@ -139,12 +162,21 @@ export default async function SelectServerPage({
                   </form>
                 </>
               ) : (
-                <Button asChild variant="outline">
-                  <a href={buildBotInviteUrl(guild.id)} target="_blank" rel="noopener noreferrer">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Bot
-                  </a>
-                </Button>
+                <>
+                  <Button asChild variant="outline">
+                    <a href={buildBotInviteUrl(guild.id)} target="_blank" rel="noopener noreferrer">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Bot
+                    </a>
+                  </Button>
+
+                  <Button asChild>
+                    <Link href={`/select-server?confirmGuild=${encodeURIComponent(guild.id)}`}>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Confirm Added
+                    </Link>
+                  </Button>
+                </>
               )}
             </div>
           </div>

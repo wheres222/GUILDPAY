@@ -23,14 +23,16 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 lg:px-8">
         <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/guildpay-logo.png"
-            alt="Guild Pay logo"
-            width={36}
-            height={36}
-            className="rounded-lg"
-            priority
-          />
+          <div className="h-9 w-9 overflow-hidden rounded-lg">
+            <Image
+              src="/guildpay-logo.png"
+              alt="Guild Pay logo"
+              width={36}
+              height={36}
+              className="h-full w-full object-cover"
+              priority
+            />
+          </div>
           <span
             className="text-xl font-bold tracking-tight text-foreground"
             style={{ fontFamily: "var(--font-display)" }}

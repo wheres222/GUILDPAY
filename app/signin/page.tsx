@@ -7,10 +7,11 @@ import { computeReadiness } from "@/lib/readiness"
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ callbackUrl?: string }>
+  searchParams?: Promise<{ callbackUrl?: string; force?: string }>
 }) {
   const params = await searchParams
   const callbackUrl = params?.callbackUrl || "/select-server"
+  const forceConsent = params?.force === "1"
   const oauthConfigured = isDiscordOAuthConfigured()
   const readiness = await computeReadiness()
   return (
@@ -39,7 +40,7 @@ export default async function SignInPage({
 
         <div className="rounded-xl border border-border/60 bg-card p-6 shadow-sm">
           {oauthConfigured ? (
-            <DiscordSignInButton callbackUrl={callbackUrl} />
+            <DiscordSignInButton callbackUrl={callbackUrl} forceConsent={forceConsent} />
           ) : (
             <div className="space-y-3">
               <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">

@@ -26,7 +26,8 @@ export async function fetchManagedGuilds(userAccessToken: string): Promise<Disco
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch guilds (${response.status})`)
+    const body = await response.text().catch(() => "")
+    throw new Error(`Failed to fetch guilds (${response.status}) ${body.slice(0, 200)}`)
   }
 
   const guilds = (await response.json()) as DiscordGuild[]

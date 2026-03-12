@@ -11,27 +11,38 @@ export const dynamic = "force-dynamic"
 async function setupServer(guildId: string, guildName: string, discordUserId: string) {
   const apiBase = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api"
 
-  const response = await fetch(`${apiBase}/setup`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      discordGuildId: guildId,
-      guildName,
-      discordUserId,
-    }),
-    cache: "no-store",
-  })
+  try {
+    const response = await fetch(`${apiBase}/setup`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        discordGuildId: guildId,
+        guildName,
+        discordUserId,
+      }),
+      cache: "no-store",
+    })
 
-  return response.ok
+    if (response.ok) {
+      return { ok: true as const }
+    }
+
+    const text = await response.text().catch(() => "")
+    return { ok: false as const, message: `setup failed (${response.status}) ${text.slice(0, 160)}` }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown setup error"
+    return { ok: false as const, message }
+  }
 }
 
 export default async function SelectServerPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string; demo?: string; confirmGuild?: string }>
+  searchParams?: Promise<{ error?: string; demo?: string; confirmGuild?: string; setupMessage?: string }>
 }) {
   const params = await searchParams
   const setupError = params?.error
+  const setupMessage = params?.setupMessage
   const demoMode = params?.demo === "1"
   const confirmGuild = params?.confirmGuild
   const oauthConfigured = isDiscordOAuthConfigured()
@@ -84,11 +95,13 @@ export default async function SelectServerPage({
     const guild = guildsWithState.find((entry) => entry.id === confirmGuild)
 
     if (guild) {
-      const ok = await setupServer(guild.id, guild.name, currentUserId)
-      if (ok) {
+      const result = await setupServer(guild.id, guild.name, currentUserId)
+      if (result.ok) {
         redirect(`/dashboard/${guild.id}`)
       }
-      redirect(`/select-server?error=${encodeURIComponent(`setup_failed:${guild.id}`)}`)
+      redirect(
+        `/select-server?error=${encodeURIComponent(`setup_failed:${guild.id}`)}&setupMessage=${encodeURIComponent(result.message || "setup_failed")}`
+      )
     }
 
     confirmMessage = "Server not found in your managed guild list. Refresh and try again."
@@ -105,13 +118,18 @@ export default async function SelectServerPage({
 
       {setupError ? (
         <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-          Setup failed for one server. Check backend API URL and try again.
+          Setup failed for one server. {setupMessage ? `Details: ${setupMessage}` : "Check backend API URL and try again."}
         </div>
       ) : null}
 
       {guildsError ? (
         <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
           {guildsError}
+          <div className="mt-2">
+            <Link href="/signin?callbackUrl=%2Fselect-server&force=1" className="text-amber-100 underline hover:text-white">
+              Reconnect Discord permissions
+            </Link>
+          </div>
         </div>
       ) : null}
 
@@ -147,12 +165,14 @@ export default async function SelectServerPage({
                         redirect(`/dashboard/${guild.id}`)
                       }
 
-                      const ok = await setupServer(guild.id, guild.name, currentUserId)
-                      if (ok) {
+                      const result = await setupServer(guild.id, guild.name, currentUserId)
+                      if (result.ok) {
                         redirect(`/dashboard/${guild.id}`)
                       }
 
-                      redirect(`/select-server?error=${encodeURIComponent(`setup_failed:${guild.id}`)}`)
+                      redirect(
+                        `/select-server?error=${encodeURIComponent(`setup_failed:${guild.id}`)}&setupMessage=${encodeURIComponent(result.message || "setup_failed")}`
+                      )
                     }}
                   >
                     <Button type="submit">

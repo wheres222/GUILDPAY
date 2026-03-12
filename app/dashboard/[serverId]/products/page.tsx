@@ -11,6 +11,7 @@ type ProductsResponse = {
   products: Array<{
     id: string
     name: string
+    description?: string | null
     isActive: boolean
     createdAt: string
     variants: Array<{
@@ -20,6 +21,7 @@ type ProductsResponse = {
       currency: string
       deliveryType: string
       isActive: boolean
+      deliveryValue?: string | null
     }>
   }>
 }
@@ -29,7 +31,7 @@ export default async function ProductsPage({
   searchParams,
 }: {
   params: Promise<{ serverId: string }>
-  searchParams?: Promise<{ panel?: string; error?: string }>
+  searchParams?: Promise<{ panel?: string; product?: string; error?: string }>
 }) {
   const { serverId } = await params
   const sp = await searchParams
@@ -47,6 +49,46 @@ export default async function ProductsPage({
     }
   }
 
+  async function createProductAction(formData: FormData) {
+    "use server"
+
+    const serverId = String(formData.get("serverId") || "")
+    const name = String(formData.get("name") || "").trim()
+    const description = String(formData.get("description") || "").trim()
+    const priceCents = Number(formData.get("priceCents") || 0)
+    const deliveryType = String(formData.get("deliveryType") || "")
+    const deliveryValue = String(formData.get("deliveryValue") || "").trim()
+
+    const ctx = await resolveDashboardContext(serverId)
+    if (!ctx.guildId || !ctx.sellerId) {
+      redirect(`/dashboard/${serverId}/products?error=missing_context`)
+    }
+
+    if (!name || !priceCents || !deliveryType) {
+      redirect(`/dashboard/${serverId}/products?error=invalid_product_input`)
+    }
+
+    try {
+      await apiFetch("/products", {
+        method: "POST",
+        body: JSON.stringify({
+          guildId: ctx.guildId,
+          sellerId: ctx.sellerId,
+          name,
+          description: description || undefined,
+          priceCents,
+          deliveryType,
+          deliveryValue: deliveryValue || undefined,
+        }),
+      })
+
+      revalidatePath(`/dashboard/${serverId}/products`)
+      redirect(`/dashboard/${serverId}/products?product=created`)
+    } catch {
+      redirect(`/dashboard/${serverId}/products?error=product_create_failed`)
+    }
+  }
+
   async function createPanelAction(formData: FormData) {
     "use server"
 
@@ -54,6 +96,12 @@ export default async function ProductsPage({
     const productId = String(formData.get("productId") || "")
     const channelId = String(formData.get("channelId") || "")
     const paymentMode = String(formData.get("paymentMode") || "BOTH")
+    const note = String(formData.get("note") || "").trim()
+    const panelTitle = String(formData.get("panelTitle") || "").trim()
+    const panelDescription = String(formData.get("panelDescription") || "").trim()
+    const imageUrl = String(formData.get("imageUrl") || "").trim()
+    const cardButtonLabel = String(formData.get("cardButtonLabel") || "").trim()
+    const cryptoButtonLabel = String(formData.get("cryptoButtonLabel") || "").trim()
 
     const ctx = await resolveDashboardContext(serverId)
     if (!ctx.session?.user?.id) {
@@ -69,6 +117,12 @@ export default async function ProductsPage({
           productId,
           channelId,
           paymentMode,
+          note: note || undefined,
+          panelTitle: panelTitle || undefined,
+          panelDescription: panelDescription || undefined,
+          imageUrl: imageUrl || undefined,
+          cardButtonLabel: cardButtonLabel || undefined,
+          cryptoButtonLabel: cryptoButtonLabel || undefined,
         }),
       })
 
@@ -86,9 +140,15 @@ export default async function ProductsPage({
           Products
         </h1>
         <p className="text-sm text-muted-foreground">
-          Live catalog from backend API. Use Discord `/product_create` and `/license_add` to manage inventory quickly.
+          Manage product pricing, delivery mode, and channel buy-panels from one place.
         </p>
       </div>
+
+      {sp?.product === "created" ? (
+        <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
+          Product created successfully.
+        </div>
+      ) : null}
 
       {sp?.panel === "created" ? (
         <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
@@ -107,6 +167,59 @@ export default async function ProductsPage({
           {dataError}
         </div>
       ) : null}
+
+      <Card className="mb-6 border-border/60">
+        <CardHeader>
+          <CardTitle className="text-base">Create Product</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={createProductAction} className="grid gap-3 sm:grid-cols-2">
+            <input type="hidden" name="serverId" value={serverId} />
+
+            <input
+              name="name"
+              placeholder="Product name"
+              className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
+              required
+            />
+            <input
+              name="priceCents"
+              type="number"
+              min={1}
+              step={1}
+              placeholder="Price in cents (e.g., 1999)"
+              className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
+              required
+            />
+
+            <select
+              name="deliveryType"
+              className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
+              defaultValue="FILE_LINK"
+            >
+              <option value="FILE_LINK">FILE_LINK</option>
+              <option value="LICENSE_KEY">LICENSE_KEY</option>
+              <option value="WEBHOOK">WEBHOOK</option>
+            </select>
+            <input
+              name="deliveryValue"
+              placeholder="Delivery value (URL or endpoint for FILE_LINK/WEBHOOK)"
+              className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
+            />
+
+            <textarea
+              name="description"
+              rows={3}
+              placeholder="Optional product description"
+              className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground sm:col-span-2"
+            />
+
+            <div className="sm:col-span-2">
+              <Button type="submit">Create Product</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4">
         {products.length ? (
@@ -133,14 +246,14 @@ export default async function ProductsPage({
                     </p>
                   </div>
 
-                  <form action={createPanelAction} className="flex flex-col gap-2 rounded-lg border border-border/60 p-3 sm:flex-row sm:items-center">
+                  <form action={createPanelAction} className="grid gap-2 rounded-lg border border-border/60 p-3 sm:grid-cols-2">
                     <input type="hidden" name="serverId" value={serverId} />
                     <input type="hidden" name="productId" value={product.id} />
 
                     <input
                       name="channelId"
                       placeholder="Discord channel ID"
-                      className="w-full rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground sm:w-52"
+                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
                       required
                     />
 
@@ -154,7 +267,44 @@ export default async function ProductsPage({
                       <option value="CRYPTO">Crypto only</option>
                     </select>
 
-                    <Button type="submit" size="sm">Post Buy Panel</Button>
+                    <input
+                      name="panelTitle"
+                      placeholder="Optional panel title override"
+                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
+                    />
+                    <input
+                      name="imageUrl"
+                      placeholder="Optional image URL"
+                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
+                    />
+
+                    <input
+                      name="cardButtonLabel"
+                      placeholder="Card button label (optional)"
+                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
+                    />
+                    <input
+                      name="cryptoButtonLabel"
+                      placeholder="Crypto button label (optional)"
+                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
+                    />
+
+                    <textarea
+                      name="panelDescription"
+                      rows={2}
+                      placeholder="Optional panel description"
+                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground sm:col-span-2"
+                    />
+                    <textarea
+                      name="note"
+                      rows={2}
+                      placeholder="Optional extra note"
+                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground sm:col-span-2"
+                    />
+
+                    <div className="sm:col-span-2">
+                      <Button type="submit" size="sm">Post Buy Panel</Button>
+                    </div>
                   </form>
                 </CardContent>
               </Card>
@@ -163,7 +313,7 @@ export default async function ProductsPage({
         ) : (
           <Card className="border-border/60">
             <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              No products found. Create one in Discord with <code>/product_create</code>.
+              No products found. Create one above or in Discord with <code>/product_create</code>.
             </CardContent>
           </Card>
         )}

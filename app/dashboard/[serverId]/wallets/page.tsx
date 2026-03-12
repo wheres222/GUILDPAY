@@ -15,6 +15,13 @@ type SummaryResponse = {
   }
 }
 
+type ProfileResponse = {
+  success: boolean
+  profile: {
+    planTier: "FREE" | "PRO" | "ENTERPRISE"
+  }
+}
+
 type PayoutResponse = {
   success: boolean
   payout: {
@@ -50,16 +57,19 @@ export default async function WalletsPage({
   let error: string | null = ctx.error
   let summary: SummaryResponse["summary"] | null = null
   let payouts: PayoutListResponse["payouts"] = []
+  let planTier: "FREE" | "PRO" | "ENTERPRISE" = "FREE"
 
   if (ctx.sellerId) {
     try {
-      const [summaryRes, payoutRes] = await Promise.all([
+      const [summaryRes, payoutRes, profileRes] = await Promise.all([
         apiFetch<SummaryResponse>(`/dashboard/seller/${ctx.sellerId}/summary`),
         apiFetch<PayoutListResponse>(`/payouts/crypto/requests?sellerId=${ctx.sellerId}&limit=20`),
+        apiFetch<ProfileResponse>(`/dashboard/seller/${ctx.sellerId}/profile`),
       ])
 
       summary = summaryRes.summary
       payouts = payoutRes.payouts
+      planTier = profileRes.profile.planTier
     } catch {
       error = "Could not load wallet metrics from backend API."
     }
@@ -94,13 +104,22 @@ export default async function WalletsPage({
     }
   }
 
+  const feeRateMap: Record<typeof planTier, number> = {
+    FREE: 3,
+    PRO: 1.5,
+    ENTERPRISE: 0,
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6">
         <h1 className="text-xl font-bold text-foreground sm:text-2xl" style={{ fontFamily: "var(--font-display)" }}>
           Wallets & Payouts
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Platform fee is taken per order (1–3% by tier), seller net is credited on paid webhook confirmation.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Platform fee is taken per order by plan tier. Current tier: <span className="font-medium text-foreground">{planTier}</span>
+          {" "}({feeRateMap[planTier]}%). Seller net is credited on paid webhook confirmation.
+        </p>
       </div>
 
       {sp?.payout === "requested" ? (

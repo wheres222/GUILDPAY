@@ -3,6 +3,7 @@ import { signIn } from "@/auth"
 import { Button } from "@/components/ui/button"
 import { DiscordIcon } from "@/components/discord-icon"
 import { isDiscordOAuthConfigured } from "@/lib/auth-config"
+import { computeReadiness } from "@/lib/readiness"
 
 export default async function SignInPage({
   searchParams,
@@ -12,6 +13,7 @@ export default async function SignInPage({
   const params = await searchParams
   const callbackUrl = params?.callbackUrl || "/select-server"
   const oauthConfigured = isDiscordOAuthConfigured()
+  const readiness = await computeReadiness()
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background">
       {/* Gradient background */}
@@ -61,6 +63,21 @@ export default async function SignInPage({
               <Button asChild size="lg" variant="outline" className="w-full">
                 <Link href="/select-server?demo=1">Continue in Demo Mode</Link>
               </Button>
+            </div>
+          )}
+
+          {readiness.notes.length ? (
+            <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+              <p className="font-medium">Readiness checks:</p>
+              <ul className="mt-1 list-disc space-y-1 pl-4">
+                {readiness.notes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs text-green-300">
+              OAuth and API readiness checks passed.
             </div>
           )}
 

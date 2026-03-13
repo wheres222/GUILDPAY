@@ -1,5 +1,22 @@
+function normalizeBaseUrl(value?: string) {
+  const raw = (value || "").trim()
+  if (!raw) return ""
+  return raw.replace(/\/+$/, "")
+}
+
 export function getApiBaseUrl() {
-  return process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api"
+  const publicBase = normalizeBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL)
+  const serverBase = normalizeBaseUrl(process.env.API_BASE_URL)
+
+  if (process.env.NODE_ENV === "production") {
+    if (publicBase) return publicBase
+
+    if (serverBase && !/localhost|127\.0\.0\.1/i.test(serverBase)) {
+      return serverBase
+    }
+  }
+
+  return serverBase || publicBase || "http://localhost:3000/api"
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {

@@ -9,35 +9,6 @@ import { isDiscordOAuthConfigured } from "@/lib/auth-config"
 
 export const dynamic = "force-dynamic"
 
-type SetupResult = { ok: true } | { ok: false; message: string }
-
-async function setupServer(guildId: string, guildName: string, discordUserId: string): Promise<SetupResult> {
-  const apiBase = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api"
-
-  try {
-    const response = await fetch(`${apiBase}/setup`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        discordGuildId: guildId,
-        guildName,
-        discordUserId,
-      }),
-      cache: "no-store",
-    })
-
-    if (response.ok) {
-      return { ok: true }
-    }
-
-    const text = await response.text().catch(() => "")
-    return { ok: false, message: `setup failed (${response.status}) ${text.slice(0, 160)}` }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown setup error"
-    return { ok: false, message }
-  }
-}
-
 function guildIconUrl(guildId: string, icon: string | null) {
   if (!icon) return null
   return `https://cdn.discordapp.com/icons/${guildId}/${icon}.png?size=256`
@@ -46,21 +17,18 @@ function guildIconUrl(guildId: string, icon: string | null) {
 export default async function SelectServerPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string; demo?: string; setupMessage?: string }>
+  searchParams?: Promise<{ demo?: string }>
 }) {
   const params = await searchParams
-  const setupError = params?.error
-  const setupMessage = params?.setupMessage
   const demoMode = params?.demo === "1"
   const oauthConfigured = isDiscordOAuthConfigured()
 
   const session = await auth()
   const hasSession = Boolean(session?.accessToken && session.user?.id)
+
   if (!hasSession && oauthConfigured && !demoMode) {
     redirect("/signin")
   }
-
-  const currentUserId = session?.user?.id || "demo-user"
 
   const demoGuilds = [
     { id: "demo-1", name: "Demo Storefront", icon: null, permissions: "0", hasBot: true },
@@ -86,8 +54,7 @@ export default async function SelectServerPage({
         }))
       )
     } catch {
-      guildsError =
-        "Could not load Discord servers. Reconnect Discord permissions, then retry."
+      guildsError = "Could not load Discord servers. Reconnect Discord permissions and retry."
     }
   } else {
     guildsWithState = demoGuilds
@@ -114,12 +81,6 @@ export default async function SelectServerPage({
           </Button>
         </div>
       </div>
-
-      {setupError ? (
-        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-          Setup failed for one server. {setupMessage ? `Details: ${setupMessage}` : "Check backend API URL and try again."}
-        </div>
-      ) : null}
 
       {guildsError ? (
         <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
@@ -149,26 +110,15 @@ export default async function SelectServerPage({
               </div>
 
               <p className="truncate text-sm font-semibold text-foreground">{guild.name}</p>
-              <p className="mb-3 text-xs text-muted-foreground">Owner</p>
+              <p className="mb-3 text-xs text-muted-foreground">Guild ID: {guild.id}</p>
 
               {guild.hasBot ? (
-                <form
-                  action={async () => {
-                    "use server"
-                    const result = await setupServer(guild.id, guild.name, currentUserId)
-                    if (result.ok) {
-                      redirect(`/dashboard/${guild.id}`)
-                    }
-                    redirect(
-                      `/select-server?error=${encodeURIComponent(`setup_failed:${guild.id}`)}&setupMessage=${encodeURIComponent(result.message || "setup_failed")}`
-                    )
-                  }}
-                >
-                  <Button type="submit" className="w-full">
+                <Button asChild className="w-full">
+                  <Link href={`/dashboard/${guild.id}`}>
                     <CheckCircle2 className="mr-2 h-4 w-4" />
                     Manage
-                  </Button>
-                </form>
+                  </Link>
+                </Button>
               ) : (
                 <Button asChild variant="outline" className="w-full">
                   <a href={buildBotInviteUrl(guild.id)} target="_blank" rel="noopener noreferrer">

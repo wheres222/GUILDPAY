@@ -11,6 +11,7 @@ import { dashboardRouter } from "./routes/dashboard.js";
 import { inventoryRouter } from "./routes/inventory.js";
 import { testingRouter } from "./routes/testing.js";
 import { discordPanelsRouter } from "./routes/discord-panels.js";
+import { discordRouter } from "./routes/discord.js";
 
 export function createApiServer() {
   const app = express();
@@ -30,6 +31,7 @@ export function createApiServer() {
   app.use("/api", inventoryRouter);
   app.use("/api", testingRouter);
   app.use("/api", discordPanelsRouter);
+  app.use("/api", discordRouter);
   app.use("/api", webhookRouter);
 
   app.use(errorHandler);

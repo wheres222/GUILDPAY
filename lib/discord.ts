@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "@/lib/backend-api"
+
 const DISCORD_API_BASE = "https://discord.com/api/v10"
 const MANAGE_GUILD_BIT = BigInt(0x20)
 
@@ -65,4 +67,21 @@ export async function checkBotInstalledInGuild(guildId: string) {
   })
 
   return response.ok
+}
+
+export async function checkBotInstalledViaApi(guildId: string) {
+  const apiBase = getApiBaseUrl()
+
+  try {
+    const response = await fetch(`${apiBase}/discord/guild/${guildId}/bot-installed`, {
+      cache: "no-store",
+    })
+
+    if (!response.ok) return false
+
+    const json = (await response.json()) as { installed?: boolean }
+    return Boolean(json.installed)
+  } catch {
+    return false
+  }
 }

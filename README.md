@@ -1,8 +1,8 @@
 # GUILDPAY Monorepo
 
 This repo now contains both:
-- `./` → **Frontend** (Next.js, Vercel)
-- `./backend` → **Backend** (Discord bot + API)
+- `./` → **Frontend / Website** (Next.js, Vercel)
+- `./bot` → **Bot + API** (Discord bot + Express API)
 
 ## Frontend (Vercel)
 
@@ -28,11 +28,11 @@ npm run lint
 npm run typecheck
 ```
 
-## Backend (`/backend`)
+## Bot + API (`/bot`)
 
 ### Setup
 ```bash
-cd backend
+cd bot
 cp .env.example .env
 npm ci
 npm run prisma:generate

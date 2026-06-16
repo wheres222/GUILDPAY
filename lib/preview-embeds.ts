@@ -3,7 +3,7 @@
  *
  * These mirror the rich embeds the bot sends so you can design/tweak them in the
  * browser with hot reload — no backend or Discord needed. They intentionally
- * have NO imports so they're trivial to copy into backend/src/bot when you want
+ * have NO imports so they're trivial to copy into bot/src/bot when you want
  * the live bot to use the same designs.
  */
 

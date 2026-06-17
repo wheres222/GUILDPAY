@@ -1,5 +1,6 @@
 import { DeliveryType } from "@prisma/client";
 import { getBotClient } from "../bot/runtime.js";
+import { panelMessage, type PanelSpec } from "../bot/ui/cv2.js";
 
 function deliveryLines(deliveryPayload: unknown) {
   if (!Array.isArray(deliveryPayload)) return [];
@@ -32,13 +33,13 @@ function deliveryLines(deliveryPayload: unknown) {
     .filter((line): line is string => Boolean(line));
 }
 
-async function sendDirectMessage(discordUserId: string, content: string) {
+async function sendDirectPanel(discordUserId: string, spec: PanelSpec) {
   const client = getBotClient();
   if (!client) return false;
 
   try {
     const user = await client.users.fetch(discordUserId);
-    await user.send({ content });
+    await user.send(panelMessage(spec));
     return true;
   } catch {
     return false;
@@ -50,14 +51,15 @@ export async function notifyBuyerPaymentConfirmed(input: {
   orderId: string;
   productName: string;
 }) {
-  const content = [
-    "✅ Payment confirmed",
-    `Order: \`${input.orderId}\``,
-    `Product: **${input.productName}**`,
-    "We are preparing your delivery now."
-  ].join("\n");
-
-  return sendDirectMessage(input.buyerDiscordUserId, content);
+  return sendDirectPanel(input.buyerDiscordUserId, {
+    title: "✅ Payment confirmed",
+    body: [
+      `Product: **${input.productName}**`,
+      `Order: \`${input.orderId}\``,
+      "",
+      "We're preparing your delivery now."
+    ].join("\n")
+  });
 }
 
 export async function notifyBuyerDeliveryComplete(input: {
@@ -68,15 +70,17 @@ export async function notifyBuyerDeliveryComplete(input: {
 }) {
   const lines = deliveryLines(input.deliveryPayload);
 
-  const content = [
-    "🎉 Delivery complete",
-    `Order: \`${input.orderId}\``,
-    `Product: **${input.productName}**`,
-    lines.length ? lines.join("\n") : "No delivery payload was recorded.",
-    "\nUse /orders in Discord to view your order history."
-  ].join("\n");
-
-  return sendDirectMessage(input.buyerDiscordUserId, content);
+  return sendDirectPanel(input.buyerDiscordUserId, {
+    title: "🎉 Delivery complete",
+    body: [
+      `Product: **${input.productName}**`,
+      `Order: \`${input.orderId}\``,
+      "",
+      lines.length ? lines.join("\n") : "No delivery payload was recorded.",
+      "",
+      "Use `/orders` to view your order history."
+    ].join("\n")
+  });
 }
 
 export async function notifyBuyerDeliveryFailed(input: {
@@ -84,12 +88,13 @@ export async function notifyBuyerDeliveryFailed(input: {
   orderId: string;
   reason: string;
 }) {
-  const content = [
-    "⚠️ Delivery issue",
-    `Order: \`${input.orderId}\``,
-    `Reason: ${input.reason}`,
-    "Please contact support with your order ID."
-  ].join("\n");
-
-  return sendDirectMessage(input.buyerDiscordUserId, content);
+  return sendDirectPanel(input.buyerDiscordUserId, {
+    title: "⚠️ Delivery issue",
+    body: [
+      `Order: \`${input.orderId}\``,
+      `Reason: ${input.reason}`,
+      "",
+      "Please contact support with your order ID."
+    ].join("\n")
+  });
 }

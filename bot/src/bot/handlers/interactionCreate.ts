@@ -14,6 +14,12 @@ import {
   upsertGuildAndSeller
 } from "../../services/sellerService.js";
 import { createStripeConnectOnboardingLink } from "../../services/stripeService.js";
+import { ephemeralPanel, panelEdit, EPHEMERAL_V2_DEFER } from "../ui/cv2.js";
+
+const SETUP_REQUIRED = ephemeralPanel({
+  title: "Setup required",
+  body: "Run `/setup` first."
+});
 
 function requireGuild(interaction: ChatInputCommandInteraction | ButtonInteraction): string {
   if (!interaction.guildId) {
@@ -79,16 +85,18 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
 
   const [, productId, paymentMode] = interaction.customId.split(":");
   if (!productId || (paymentMode !== "CARD" && paymentMode !== "CRYPTO")) {
-    await interaction.reply({
-      ephemeral: true,
-      content: "Invalid panel button payload. Ask seller to repost panel."
-    });
+    await interaction.reply(
+      ephemeralPanel({
+        title: "Invalid button",
+        body: "Invalid panel button payload. Ask the seller to repost the panel."
+      })
+    );
     return;
   }
 
   try {
     const discordGuildId = requireGuild(interaction);
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply(EPHEMERAL_V2_DEFER);
 
     const { checkout, product } = await createCheckoutFromGuildProductContext({
       discordGuildId,
@@ -98,24 +106,24 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       quantity: 1
     });
 
-    await interaction.editReply({
-      content:
-        `Checkout created for **${product.name}** (${paymentMode}).\n` +
-        `Order ID: \`${checkout.orderId}\`\n` +
-        `Pay here: ${checkout.checkoutUrl}\n\n` +
-        `After payment confirmation, delivery updates are sent privately.`
-    });
+    await interaction.editReply(
+      panelEdit({
+        title: `Checkout — ${product.name}`,
+        body:
+          `Payment: **${paymentMode}**\n` +
+          `Order: \`${checkout.orderId}\`\n\n` +
+          "Click **Pay now** to complete. Delivery updates are sent here privately.",
+        buttons: [{ label: "Pay now", url: checkout.checkoutUrl, style: "link" }]
+      })
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create checkout.";
     if (interaction.deferred || interaction.replied) {
-      await interaction.editReply({ content: `Could not create checkout: ${message}` });
+      await interaction.editReply(panelEdit({ title: "Checkout failed", body: message }));
       return;
     }
 
-    await interaction.reply({
-      ephemeral: true,
-      content: `Could not create checkout: ${message}`
-    });
+    await interaction.reply(ephemeralPanel({ title: "Checkout failed", body: message }));
   }
 }
 
@@ -133,13 +141,15 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
 
     const plan = PLAN_CONFIG[seller.planTier];
 
-    await interaction.reply({
-      ephemeral: true,
-      content:
-        `Setup complete. You are on **${plan.label}** tier.\n` +
-        `Transaction fee: **${(plan.feeRate * 100).toFixed(2)}%** | Monthly: **$${plan.monthlyPriceUsd}**\n` +
-        `Next: use /product_create to add your first product.`
-    });
+    await interaction.reply(
+      ephemeralPanel({
+        title: "Setup complete",
+        body:
+          `You're on the **${plan.label}** tier.\n` +
+          `Transaction fee: **${(plan.feeRate * 100).toFixed(2)}%**  •  Monthly: **$${plan.monthlyPriceUsd}**\n\n` +
+          "Next: use `/product_create` to add your first product."
+      })
+    );
     return;
   }
 
@@ -151,7 +161,7 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     });
 
     if (!seller) {
-      await interaction.reply({ content: "Run /setup first.", ephemeral: true });
+      await interaction.reply(SETUP_REQUIRED);
       return;
     }
 
@@ -164,13 +174,13 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
       returnUrl
     });
 
-    await interaction.reply({
-      ephemeral: true,
-      content:
-        `Stripe onboarding link ready (${onboarding.mocked ? "mock" : "live"}).\n` +
-        `Account: \`${onboarding.accountId}\`\n` +
-        `Link: ${onboarding.onboardingUrl}`
-    });
+    await interaction.reply(
+      ephemeralPanel({
+        title: `Stripe onboarding ready (${onboarding.mocked ? "mock" : "live"})`,
+        body: `Account: \`${onboarding.accountId}\``,
+        buttons: [{ label: "Open Stripe onboarding", url: onboarding.onboardingUrl, style: "link" }]
+      })
+    );
     return;
   }
 
@@ -182,10 +192,9 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     });
 
     if (!seller) {
-      await interaction.reply({
-        content: "Run /setup first before creating products.",
-        ephemeral: true
-      });
+      await interaction.reply(
+        ephemeralPanel({ title: "Setup required", body: "Run `/setup` first before creating products." })
+      );
       return;
     }
 
@@ -199,10 +208,12 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     const description = interaction.options.getString("description") || undefined;
 
     if ((deliveryType === "FILE_LINK" || deliveryType === "WEBHOOK") && !deliveryValue) {
-      await interaction.reply({
-        content: "delivery_value is required for FILE_LINK or WEBHOOK products.",
-        ephemeral: true
-      });
+      await interaction.reply(
+        ephemeralPanel({
+          title: "Missing delivery value",
+          body: "`delivery_value` is required for FILE_LINK or WEBHOOK products."
+        })
+      );
       return;
     }
 
@@ -217,13 +228,16 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
       currency: "usd"
     });
 
-    await interaction.reply({
-      ephemeral: true,
-      content:
-        `Product created: **${product.name}**\n` +
-        `ID: \`${product.id}\` | Variant: \`${product.variants[0]?.id}\`\n` +
-        `Price: $${(priceCents / 100).toFixed(2)} | Delivery: ${deliveryType}`
-    });
+    await interaction.reply(
+      ephemeralPanel({
+        title: "Product created",
+        body:
+          `**${product.name}**\n` +
+          `Product ID: \`${product.id}\`\n` +
+          `Variant ID: \`${product.variants[0]?.id}\`\n` +
+          `Price: **$${(priceCents / 100).toFixed(2)}**  •  Delivery: **${deliveryType}**`
+      })
+    );
     return;
   }
 
@@ -235,25 +249,26 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     });
 
     if (!seller) {
-      await interaction.reply({ content: "Run /setup first.", ephemeral: true });
+      await interaction.reply(SETUP_REQUIRED);
       return;
     }
 
     const products = await listProductsBySeller(seller.id);
     if (!products.length) {
-      await interaction.reply({ content: "No products yet. Use /product_create.", ephemeral: true });
+      await interaction.reply(
+        ephemeralPanel({ title: "No products yet", body: "Use `/product_create` to add one." })
+      );
       return;
     }
 
     const lines = products.slice(0, 15).map((product) => {
       const variant = product.variants[0];
-      return `• ${product.name} | ID: ${product.id} | $${(variant?.priceCents || 0) / 100}`;
+      return `• **${product.name}** — $${((variant?.priceCents || 0) / 100).toFixed(2)}  ·  \`${product.id}\``;
     });
 
-    await interaction.reply({
-      ephemeral: true,
-      content: `Your products:\n${lines.join("\n")}`
-    });
+    await interaction.reply(
+      ephemeralPanel({ title: "Your products", body: lines.join("\n") })
+    );
     return;
   }
 
@@ -265,7 +280,9 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     });
 
     if (!seller) {
-      await interaction.reply({ content: "Run /setup first before posting product panels.", ephemeral: true });
+      await interaction.reply(
+        ephemeralPanel({ title: "Setup required", body: "Run `/setup` first before posting product panels." })
+      );
       return;
     }
 
@@ -282,10 +299,12 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     const channel = asTextChannel(optionChannel || interaction.channel);
 
     if (!channel) {
-      await interaction.reply({
-        ephemeral: true,
-        content: "Selected channel is not text-based. Choose a standard text channel."
-      });
+      await interaction.reply(
+        ephemeralPanel({
+          title: "Invalid channel",
+          body: "Selected channel is not text-based. Choose a standard text channel."
+        })
+      );
       return;
     }
 
@@ -303,14 +322,13 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
       cryptoButtonLabel
     });
 
-    await interaction.reply({
-      ephemeral: true,
-      content:
-        `Panel posted successfully.\n` +
-        `Product ID: \`${panel.productId}\`\n` +
-        `Channel ID: \`${panel.channelId}\`\n` +
-        `Message: ${panel.url}`
-    });
+    await interaction.reply(
+      ephemeralPanel({
+        title: "Panel posted",
+        body: `Product: \`${panel.productId}\`\nChannel: \`${panel.channelId}\``,
+        buttons: [{ label: "View panel", url: panel.url, style: "link" }]
+      })
+    );
     return;
   }
 
@@ -322,7 +340,7 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     });
 
     if (!seller) {
-      await interaction.reply({ content: "Run /setup first.", ephemeral: true });
+      await interaction.reply(SETUP_REQUIRED);
       return;
     }
 
@@ -342,7 +360,9 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
 
     const variantId = product?.variants[0]?.id;
     if (!variantId) {
-      await interaction.reply({ content: "Product/variant not found.", ephemeral: true });
+      await interaction.reply(
+        ephemeralPanel({ title: "Not found", body: "Product/variant not found." })
+      );
       return;
     }
 
@@ -352,12 +372,14 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
       values
     });
 
-    await interaction.reply({
-      ephemeral: true,
-      content:
-        `License keys updated for product \`${productId}\`.\n` +
-        `Created: ${result.created} | Duplicates: ${result.duplicates} | Available: ${result.available}`
-    });
+    await interaction.reply(
+      ephemeralPanel({
+        title: "License keys updated",
+        body:
+          `Product \`${productId}\`\n` +
+          `Created: **${result.created}**  •  Duplicates: **${result.duplicates}**  •  Available: **${result.available}**`
+      })
+    );
     return;
   }
 
@@ -369,25 +391,31 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     });
 
     if (!guild) {
-      await interaction.reply({ content: "No storefront yet. Ask seller to run /setup.", ephemeral: true });
+      await interaction.reply(
+        ephemeralPanel({ title: "No storefront", body: "Ask the seller to run `/setup`." })
+      );
       return;
     }
 
     const products = await listProductsByGuild(guild.id);
     if (!products.length) {
-      await interaction.reply({ content: "No products published yet.", ephemeral: true });
+      await interaction.reply(
+        ephemeralPanel({ title: "Storefront empty", body: "No products published yet." })
+      );
       return;
     }
 
     const lines = products.slice(0, 20).map((product) => {
       const variant = product.variants[0];
-      return `• **${product.name}** (ID: ${product.id}) — $${((variant?.priceCents || 0) / 100).toFixed(2)}`;
+      return `• **${product.name}** — $${((variant?.priceCents || 0) / 100).toFixed(2)}  ·  \`${product.id}\``;
     });
 
-    await interaction.reply({
-      ephemeral: true,
-      content: `Storefront:\n${lines.join("\n")}\n\nUse /buy product_id:<id> payment_method:CARD|CRYPTO`
-    });
+    await interaction.reply(
+      ephemeralPanel({
+        title: "Storefront",
+        body: `${lines.join("\n")}\n\nUse \`/buy product_id:<id> payment_method:CARD|CRYPTO\``
+      })
+    );
     return;
   }
 
@@ -405,32 +433,35 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
       quantity
     });
 
-    await interaction.reply({
-      ephemeral: true,
-      content:
-        `Checkout created for **${product.name}** (${paymentMethod}).\n` +
-        `Order ID: \`${checkout.orderId}\`\n` +
-        `Pay here: ${checkout.checkoutUrl}\n\n` +
-        `After payment confirmation, delivery updates are sent privately.`
-    });
+    await interaction.reply(
+      ephemeralPanel({
+        title: `Checkout — ${product.name}`,
+        body:
+          `Payment: **${paymentMethod}**\n` +
+          `Order: \`${checkout.orderId}\`\n\n` +
+          "Click **Pay now** to complete. Delivery updates are sent here privately.",
+        buttons: [{ label: "Pay now", url: checkout.checkoutUrl, style: "link" }]
+      })
+    );
     return;
   }
 
   if (command === "orders") {
     const orders = await listOrdersByUser(interaction.user.id);
     if (!orders.length) {
-      await interaction.reply({ content: "No orders yet.", ephemeral: true });
+      await interaction.reply(
+        ephemeralPanel({ title: "No orders yet", body: "Your purchases will show up here." })
+      );
       return;
     }
 
     const lines = orders.slice(0, 10).map((order) =>
-      `• ${order.id} | ${order.status} | $${(order.subtotalCents / 100).toFixed(2)} ${order.currency.toUpperCase()}`
+      `• \`${order.id}\` — **${order.status}** — $${(order.subtotalCents / 100).toFixed(2)} ${order.currency.toUpperCase()}`
     );
 
-    await interaction.reply({
-      ephemeral: true,
-      content: `Recent orders:\n${lines.join("\n")}`
-    });
+    await interaction.reply(
+      ephemeralPanel({ title: "Recent orders", body: lines.join("\n") })
+    );
     return;
   }
 
@@ -442,7 +473,7 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     });
 
     if (!seller) {
-      await interaction.reply({ content: "Run /setup first.", ephemeral: true });
+      await interaction.reply(SETUP_REQUIRED);
       return;
     }
 
@@ -456,12 +487,14 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
       currency: "usd"
     });
 
-    await interaction.reply({
-      ephemeral: true,
-      content:
-        `Payout request created: \`${payout.id}\`\n` +
-        `Amount: $${(amountCents / 100).toFixed(2)} -> ${walletAddress}\n` +
-        `Status: ${payout.status}`
-    });
+    await interaction.reply(
+      ephemeralPanel({
+        title: "Payout requested",
+        body:
+          `Request: \`${payout.id}\`\n` +
+          `Amount: **$${(amountCents / 100).toFixed(2)}** → \`${walletAddress}\`\n` +
+          `Status: **${payout.status}**`
+      })
+    );
   }
 }

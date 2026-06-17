@@ -1,12 +1,7 @@
-import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  EmbedBuilder,
-  TextBasedChannel
-} from "discord.js";
+import { TextBasedChannel } from "discord.js";
 import { getBotClient } from "../bot/runtime.js";
 import { prisma } from "../db/prisma.js";
+import { panelMessage, type PanelButton } from "../bot/ui/cv2.js";
 
 export type PanelPaymentMode = "CARD" | "CRYPTO" | "BOTH";
 
@@ -25,28 +20,26 @@ function buildPanelButtons(
   productId: string,
   mode: PanelPaymentMode,
   labels?: { card?: string; crypto?: string }
-) {
-  const row = new ActionRowBuilder<ButtonBuilder>();
+): PanelButton[] {
+  const buttons: PanelButton[] = [];
 
   if (mode === "CARD" || mode === "BOTH") {
-    row.addComponents(
-      new ButtonBuilder()
-        .setCustomId(`buypanel:${productId}:CARD`)
-        .setLabel(safeLabel(labels?.card, "Buy with Card"))
-        .setStyle(ButtonStyle.Primary)
-    );
+    buttons.push({
+      customId: `buypanel:${productId}:CARD`,
+      label: safeLabel(labels?.card, "Buy with Card"),
+      style: "primary"
+    });
   }
 
   if (mode === "CRYPTO" || mode === "BOTH") {
-    row.addComponents(
-      new ButtonBuilder()
-        .setCustomId(`buypanel:${productId}:CRYPTO`)
-        .setLabel(safeLabel(labels?.crypto, "Buy with Crypto"))
-        .setStyle(ButtonStyle.Success)
-    );
+    buttons.push({
+      customId: `buypanel:${productId}:CRYPTO`,
+      label: safeLabel(labels?.crypto, "Buy with Crypto"),
+      style: "success"
+    });
   }
 
-  return [row];
+  return buttons;
 }
 
 export async function getProductForPanel(input: {
@@ -134,22 +127,17 @@ export async function postProductBuyPanel(input: {
     .join("\n")
     .slice(0, 3500);
 
-  const embed = new EmbedBuilder()
-    .setTitle(title || product.name)
-    .setDescription(description)
-    .setColor(0x5865f2);
-
-  if (input.imageUrl) {
-    embed.setImage(input.imageUrl);
-  }
-
-  const message = await input.channel.send({
-    embeds: [embed],
-    components: buildPanelButtons(product.id, mode, {
-      card: input.cardButtonLabel,
-      crypto: input.cryptoButtonLabel
+  const message = await input.channel.send(
+    panelMessage({
+      title: title || product.name,
+      body: description,
+      mediaUrl: input.imageUrl, // opt-in: only shows a banner if provided
+      buttons: buildPanelButtons(product.id, mode, {
+        card: input.cardButtonLabel,
+        crypto: input.cryptoButtonLabel
+      })
     })
-  });
+  );
 
   return {
     messageId: message.id,

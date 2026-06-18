@@ -21,6 +21,8 @@ import {
   MediaGalleryItemBuilder,
   MessageFlags,
   SeparatorBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
   TextDisplayBuilder,
   type InteractionEditReplyOptions,
   type InteractionReplyOptions,
@@ -38,20 +40,38 @@ export type PanelButtonStyle =
   | "link";
 
 export interface PanelButton {
-  label: string
+  /** Optional — omit for an emoji-only button. */
+  label?: string
   style?: PanelButtonStyle
   customId?: string
   url?: string
   emoji?: string
 }
 
+export interface SelectOption {
+  label: string
+  value: string
+  description?: string
+  emoji?: string
+}
+
+export interface SelectSpec {
+  customId: string
+  placeholder?: string
+  options: readonly SelectOption[]
+}
+
 export interface PanelSpec {
   title?: string
   /** Markdown body. */
   body?: string
-  /** Optional banner/gif/image — external URL or attachment://name. Opt-in. */
+  /** Optional banner/gif/image/QR — external URL or attachment://name. Opt-in. */
   mediaUrl?: string
   buttons?: PanelButton[]
+  /** Buttons per row (1–5). Default 5. Use 2 for a two-column grid. */
+  buttonColumns?: number
+  /** Optional dropdown (e.g. choose a coin). */
+  select?: SelectSpec
   /** Override the brand accent for this one panel. */
   accent?: number | null
 }
@@ -72,9 +92,10 @@ function styleEnum(s?: PanelButtonStyle): ButtonStyle {
 }
 
 function toButton(b: PanelButton): ButtonBuilder {
-  const btn = new ButtonBuilder()
-    .setLabel(b.label.slice(0, 80))
-    .setStyle(b.url ? ButtonStyle.Link : styleEnum(b.style))
+  const btn = new ButtonBuilder().setStyle(
+    b.url ? ButtonStyle.Link : styleEnum(b.style),
+  )
+  if (b.label) btn.setLabel(b.label.slice(0, 80))
   if (b.url) btn.setURL(b.url)
   else if (b.customId) btn.setCustomId(b.customId)
   if (b.emoji) btn.setEmoji(b.emoji)
@@ -107,10 +128,29 @@ export function buildContainer(spec: PanelSpec): ContainerBuilder {
       new TextDisplayBuilder().setContent(spec.body.slice(0, 3900)),
     )
   }
+  if (spec.select) {
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId(spec.select.customId)
+      .setPlaceholder(spec.select.placeholder ?? "Select…")
+      .addOptions(
+        spec.select.options.map((o) => {
+          const opt = new StringSelectMenuOptionBuilder()
+            .setLabel(o.label.slice(0, 100))
+            .setValue(o.value)
+          if (o.description) opt.setDescription(o.description.slice(0, 100))
+          if (o.emoji) opt.setEmoji(o.emoji)
+          return opt
+        }),
+      )
+    container.addActionRowComponents(
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu),
+    )
+  }
   if (spec.buttons?.length) {
-    for (let i = 0; i < spec.buttons.length; i += 5) {
+    const cols = Math.min(5, Math.max(1, spec.buttonColumns ?? 5))
+    for (let i = 0; i < spec.buttons.length; i += cols) {
       const row = new ActionRowBuilder<ButtonBuilder>()
-      for (const b of spec.buttons.slice(i, i + 5)) row.addComponents(toButton(b))
+      for (const b of spec.buttons.slice(i, i + cols)) row.addComponents(toButton(b))
       container.addActionRowComponents(row)
     }
   }

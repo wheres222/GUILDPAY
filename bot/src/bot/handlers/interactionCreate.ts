@@ -1,10 +1,23 @@
-import { PaymentMethod } from "@prisma/client";
-import { ButtonInteraction, ChatInputCommandInteraction, TextBasedChannel } from "discord.js";
+import { PaymentMethod, PaymentProvider } from "@prisma/client";
+import {
+  ButtonInteraction,
+  ChatInputCommandInteraction,
+  TextBasedChannel
+} from "discord.js";
 import { PLAN_CONFIG } from "../../config/plans.js";
+import { COIN_OPTIONS, coinLabel } from "../../config/coins.js";
+import { env } from "../../config/env.js";
 import { prisma } from "../../db/prisma.js";
 import { createCheckoutForVariant } from "../../services/checkoutService.js";
 import { addLicenseKeysToVariant } from "../../services/inventoryService.js";
-import { listOrdersByUser, requestCryptoPayout } from "../../services/orderService.js";
+import {
+  createOrderForVariant,
+  getOrderByIdWithItems,
+  listOrdersByUser,
+  requestCryptoPayout,
+  setOrderCheckoutReference
+} from "../../services/orderService.js";
+import { createNowPaymentCharge } from "../../services/nowPaymentsService.js";
 import { postProductBuyPanel } from "../../services/discordPanelService.js";
 import {
   createProductForSeller,
@@ -14,12 +27,24 @@ import {
   upsertGuildAndSeller
 } from "../../services/sellerService.js";
 import { createStripeConnectOnboardingLink } from "../../services/stripeService.js";
-import { ephemeralPanel, panelEdit, EPHEMERAL_V2_DEFER } from "../ui/cv2.js";
+import { ephemeralPanel, panelEdit, EPHEMERAL_V2_DEFER, type PanelButton } from "../ui/cv2.js";
 
 const SETUP_REQUIRED = ephemeralPanel({
   title: "Setup required",
   body: "Run `/setup` first."
 });
+
+/**
+ * Discord rejects link-button URLs that aren't public http(s) (e.g. localhost
+ * mock URLs), which breaks the whole message. Only render a link button for a
+ * valid public URL; otherwise the URL is shown in the body text instead.
+ */
+function linkButton(label: string, url: string | undefined): PanelButton[] {
+  if (url && /^https?:\/\//i.test(url) && !/localhost|127\.0\.0\.1/i.test(url)) {
+    return [{ label, url, style: "link" }];
+  }
+  return [];
+}
 
 function requireGuild(interaction: ChatInputCommandInteraction | ButtonInteraction): string {
   if (!interaction.guildId) {
@@ -80,7 +105,74 @@ async function createCheckoutFromGuildProductContext(input: {
   return { checkout, product };
 }
 
+async function resolveGuildProduct(discordGuildId: string, productId: string) {
+  const guild = await prisma.guild.findUnique({
+    where: { discordGuildId },
+    select: { id: true }
+  });
+  if (!guild) throw new Error("Storefront not initialized yet.");
+
+  const product = await prisma.product.findFirst({
+    where: { id: productId, guildId: guild.id, isActive: true },
+    include: {
+      variants: { where: { isActive: true }, orderBy: { createdAt: "asc" } },
+      seller: true
+    }
+  });
+  if (!product || !product.variants.length) {
+    throw new Error("Product not found or unavailable.");
+  }
+  return { guild, product, variant: product.variants[0] };
+}
+
+/** Crypto path: create a pending order (no external link) to attach a charge to. */
+async function createCryptoOrder(input: {
+  discordGuildId: string;
+  productId: string;
+  buyerDiscordUserId: string;
+}) {
+  const { guild, product, variant } = await resolveGuildProduct(
+    input.discordGuildId,
+    input.productId
+  );
+  const order = await createOrderForVariant({
+    guildId: guild.id,
+    sellerId: product.sellerId,
+    buyerDiscordUserId: input.buyerDiscordUserId,
+    variantId: variant.id,
+    quantity: 1,
+    paymentMethod: PaymentMethod.CRYPTO,
+    paymentProvider: PaymentProvider.NOWPAYMENTS
+  });
+  return { order, product };
+}
+
+/** Step 1 of crypto checkout: ephemeral emoji-only coin picker (button grid). */
+function coinSelectPanel(orderId: string, productName: string, subtotalCents: number, currency: string) {
+  const buttons: PanelButton[] = COIN_OPTIONS.map((c) => ({
+    emoji: c.emoji,
+    style: "secondary",
+    customId: `paycoin:${orderId}:${c.value}`
+  }));
+
+  return panelEdit({
+    title: `Checkout — ${productName}`,
+    body:
+      `Amount: **$${(subtotalCents / 100).toFixed(2)} ${currency.toUpperCase()}**\n\n` +
+      "Tap a coin to pay with:",
+    buttons,
+    buttonColumns: 4
+  });
+}
+
 export async function handleButtonInteraction(interaction: ButtonInteraction) {
+  // Coin chosen from the picker → show address + QR + timer.
+  if (interaction.customId.startsWith("paycoin:")) {
+    const [, orderId, coin] = interaction.customId.split(":");
+    await showCryptoCharge(interaction, orderId, coin);
+    return;
+  }
+
   if (!interaction.customId.startsWith("buypanel:")) return;
 
   const [, productId, paymentMode] = interaction.customId.split(":");
@@ -98,6 +190,20 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     const discordGuildId = requireGuild(interaction);
     await interaction.deferReply(EPHEMERAL_V2_DEFER);
 
+    if (paymentMode === "CRYPTO") {
+      // In-Discord crypto flow: pick a coin next (address/QR/timer follows).
+      const { order, product } = await createCryptoOrder({
+        discordGuildId,
+        productId,
+        buyerDiscordUserId: interaction.user.id
+      });
+      await interaction.editReply(
+        coinSelectPanel(order.id, product.name, order.subtotalCents, order.currency)
+      );
+      return;
+    }
+
+    // Card → hosted Stripe checkout link (cards can't be collected inside Discord).
     const { checkout, product } = await createCheckoutFromGuildProductContext({
       discordGuildId,
       productId,
@@ -110,10 +216,11 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       panelEdit({
         title: `Checkout — ${product.name}`,
         body:
-          `Payment: **${paymentMode}**\n` +
+          `Payment: **CARD**\n` +
           `Order: \`${checkout.orderId}\`\n\n` +
-          "Click **Pay now** to complete. Delivery updates are sent here privately.",
-        buttons: [{ label: "Pay now", url: checkout.checkoutUrl, style: "link" }]
+          `**Pay here:** ${checkout.checkoutUrl}\n\n` +
+          "Delivery updates are sent here privately once payment confirms.",
+        buttons: linkButton("Pay now", checkout.checkoutUrl)
       })
     );
   } catch (error) {
@@ -124,6 +231,68 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     }
 
     await interaction.reply(ephemeralPanel({ title: "Checkout failed", body: message }));
+  }
+}
+
+/** Step 2 of crypto checkout: coin chosen → show address + QR + expiry timer. */
+async function showCryptoCharge(interaction: ButtonInteraction, orderId: string, coin: string) {
+  try {
+    await interaction.deferUpdate(); // edit the same ephemeral message
+
+    const order = await getOrderByIdWithItems(orderId);
+    if (!order) {
+      await interaction.editReply(
+        panelEdit({ title: "Checkout expired", body: "Please start checkout again." })
+      );
+      return;
+    }
+
+    const charge = await createNowPaymentCharge({
+      orderId,
+      amountUsd: order.subtotalCents / 100,
+      payCurrency: coin,
+      ipnCallbackUrl: `${env.BASE_URL}/api/webhooks/nowpayments`
+    });
+
+    await setOrderCheckoutReference({
+      orderId,
+      checkoutUrl: "",
+      paymentReference: charge.paymentId
+    });
+
+    const qr = `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(
+      charge.payAddress
+    )}`;
+    const expiresUnix = Math.floor(charge.expiresAt.getTime() / 1000);
+    const productName = order.items[0]?.productName ?? "your order";
+
+    await interaction.editReply(
+      panelEdit({
+        title: `Pay with ${coinLabel(coin)}`,
+        body: [
+          `**${productName}** · order \`${orderId.slice(0, 8)}\``,
+          "",
+          `Send exactly **${charge.payAmount} ${coin.toUpperCase()}** to this address:`,
+          "```" + charge.payAddress + "```",
+          `⏳ Expires <t:${expiresUnix}:R>`,
+          charge.mocked
+            ? "\n_Test mode — no real payment is taken. An admin can complete the order to simulate delivery._"
+            : "\nYour item is delivered automatically once the network confirms the payment."
+        ].join("\n"),
+        mediaUrl: qr
+      })
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Checkout failed.";
+    try {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply(panelEdit({ title: "Checkout failed", body: message }));
+      } else {
+        await interaction.reply(ephemeralPanel({ title: "Checkout failed", body: message }));
+      }
+    } catch {
+      // ignore secondary failure
+    }
   }
 }
 
@@ -177,8 +346,10 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     await interaction.reply(
       ephemeralPanel({
         title: `Stripe onboarding ready (${onboarding.mocked ? "mock" : "live"})`,
-        body: `Account: \`${onboarding.accountId}\``,
-        buttons: [{ label: "Open Stripe onboarding", url: onboarding.onboardingUrl, style: "link" }]
+        body:
+          `Account: \`${onboarding.accountId}\`\n\n` +
+          `**Onboarding link:** ${onboarding.onboardingUrl}`,
+        buttons: linkButton("Open Stripe onboarding", onboarding.onboardingUrl)
       })
     );
     return;
@@ -439,8 +610,9 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
         body:
           `Payment: **${paymentMethod}**\n` +
           `Order: \`${checkout.orderId}\`\n\n` +
-          "Click **Pay now** to complete. Delivery updates are sent here privately.",
-        buttons: [{ label: "Pay now", url: checkout.checkoutUrl, style: "link" }]
+          `**Pay here:** ${checkout.checkoutUrl}\n\n` +
+          "Delivery updates are sent here privately once payment confirms.",
+        buttons: linkButton("Pay now", checkout.checkoutUrl)
       })
     );
     return;

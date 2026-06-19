@@ -179,9 +179,11 @@ export const EPHEMERAL_V2_DEFER = {
 }
 
 /**
- * Payload for editReply after a deferReply(EPHEMERAL_V2_DEFER). The V2 flag is
- * already set on the deferred message, so we only send components here.
+ * Payload for editReply after a deferReply(EPHEMERAL_V2_DEFER). discord.js does
+ * NOT resend the defer's flags on editReply, so the IsComponentsV2 flag must be
+ * set again here — otherwise Discord rejects the Container (type 17) with 50035
+ * ("type must be one of (1,)").
  */
 export function panelEdit(spec: PanelSpec): InteractionEditReplyOptions {
-  return { components: [buildContainer(spec)] }
+  return { components: [buildContainer(spec)], flags: MessageFlags.IsComponentsV2 }
 }

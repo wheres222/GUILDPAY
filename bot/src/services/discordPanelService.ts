@@ -3,13 +3,6 @@ import { getBotClient } from "../bot/runtime.js";
 import { prisma } from "../db/prisma.js";
 import { panelMessage, type PanelButton } from "../bot/ui/cv2.js";
 
-export type PanelPaymentMode = "CARD" | "CRYPTO" | "BOTH";
-
-export function normalizePanelPaymentMode(value?: string): PanelPaymentMode {
-  if (value === "CARD" || value === "CRYPTO") return value;
-  return "BOTH";
-}
-
 function safeLabel(value: string | undefined, fallback: string) {
   const text = (value || "").trim();
   if (!text) return fallback;
@@ -18,28 +11,15 @@ function safeLabel(value: string | undefined, fallback: string) {
 
 function buildPanelButtons(
   productId: string,
-  mode: PanelPaymentMode,
-  labels?: { card?: string; crypto?: string }
+  cryptoLabel?: string
 ): PanelButton[] {
-  const buttons: PanelButton[] = [];
-
-  if (mode === "CARD" || mode === "BOTH") {
-    buttons.push({
-      customId: `buypanel:${productId}:CARD`,
-      label: safeLabel(labels?.card, "Buy with Card"),
-      style: "primary"
-    });
-  }
-
-  if (mode === "CRYPTO" || mode === "BOTH") {
-    buttons.push({
-      customId: `buypanel:${productId}:CRYPTO`,
-      label: safeLabel(labels?.crypto, "Buy with Crypto"),
+  return [
+    {
+      customId: `buypanel:${productId}`,
+      label: safeLabel(cryptoLabel, "Buy with Crypto"),
       style: "success"
-    });
-  }
-
-  return buttons;
+    }
+  ];
 }
 
 export async function getProductForPanel(input: {
@@ -95,15 +75,12 @@ export async function postProductBuyPanel(input: {
   discordGuildId: string;
   sellerDiscordUserId: string;
   productId: string;
-  paymentMode?: string;
   note?: string;
   panelTitle?: string;
   panelDescription?: string;
   imageUrl?: string;
-  cardButtonLabel?: string;
   cryptoButtonLabel?: string;
 }) {
-  const mode = normalizePanelPaymentMode(input.paymentMode);
   const { product, variant } = await getProductForPanel({
     discordGuildId: input.discordGuildId,
     sellerDiscordUserId: input.sellerDiscordUserId,
@@ -111,17 +88,15 @@ export async function postProductBuyPanel(input: {
   });
 
   const priceText = `$${(variant.priceCents / 100).toFixed(2)} ${variant.currency.toUpperCase()}`;
-  const methodsText =
-    mode === "BOTH" ? "Card or Crypto" : mode === "CARD" ? "Card only" : "Crypto only";
 
   const title = (input.panelTitle || product.name).trim().slice(0, 256);
   const description = [
     input.panelDescription?.trim() || product.description || null,
     `Price: **${priceText}**`,
     `Delivery: **${variant.deliveryType}**`,
-    `Payment: **${methodsText}**`,
+    `Payment: **Crypto**`,
     input.note ? `\n${input.note.trim()}` : null,
-    "\nPress a button below to start checkout. You will get a private checkout link and private delivery updates."
+    "\nPress the button below to start checkout. You will pick a coin and get a private address, QR code, and delivery updates."
   ]
     .filter(Boolean)
     .join("\n")
@@ -132,17 +107,13 @@ export async function postProductBuyPanel(input: {
       title: title || product.name,
       body: description,
       mediaUrl: input.imageUrl, // opt-in: only shows a banner if provided
-      buttons: buildPanelButtons(product.id, mode, {
-        card: input.cardButtonLabel,
-        crypto: input.cryptoButtonLabel
-      })
+      buttons: buildPanelButtons(product.id, input.cryptoButtonLabel)
     })
   );
 
   return {
     messageId: message.id,
     productId: product.id,
-    paymentMode: mode,
     channelId: message.channelId,
     url: message.url
   };
@@ -153,12 +124,10 @@ export async function postProductBuyPanelByChannelId(input: {
   channelId: string;
   sellerDiscordUserId: string;
   productId: string;
-  paymentMode?: string;
   note?: string;
   panelTitle?: string;
   panelDescription?: string;
   imageUrl?: string;
-  cardButtonLabel?: string;
   cryptoButtonLabel?: string;
 }) {
   const client = getBotClient();
@@ -178,12 +147,10 @@ export async function postProductBuyPanelByChannelId(input: {
     discordGuildId: input.discordGuildId,
     sellerDiscordUserId: input.sellerDiscordUserId,
     productId: input.productId,
-    paymentMode: input.paymentMode,
     note: input.note,
     panelTitle: input.panelTitle,
     panelDescription: input.panelDescription,
     imageUrl: input.imageUrl,
-    cardButtonLabel: input.cardButtonLabel,
     cryptoButtonLabel: input.cryptoButtonLabel
   });
 }

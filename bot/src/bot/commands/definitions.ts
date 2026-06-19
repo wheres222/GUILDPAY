@@ -6,22 +6,6 @@ export const commandDefinitions = [
     .setDescription("Initialize your server storefront (defaults to Free plan)."),
 
   new SlashCommandBuilder()
-    .setName("stripe_connect")
-    .setDescription("Generate Stripe Connect onboarding link for your seller account")
-    .addStringOption((opt) =>
-      opt
-        .setName("refresh_url")
-        .setDescription("Where Stripe sends user if onboarding needs refresh")
-        .setRequired(true)
-    )
-    .addStringOption((opt) =>
-      opt
-        .setName("return_url")
-        .setDescription("Where Stripe sends user after onboarding")
-        .setRequired(true)
-    ),
-
-  new SlashCommandBuilder()
     .setName("product_create")
     .setDescription("Create a product for this server")
     .addStringOption((opt) =>
@@ -61,17 +45,6 @@ export const commandDefinitions = [
     .addStringOption((opt) =>
       opt.setName("product_id").setDescription("Product ID to attach to the panel").setRequired(true)
     )
-    .addStringOption((opt) =>
-      opt
-        .setName("payment_mode")
-        .setDescription("Allowed payment method buttons on panel")
-        .setRequired(false)
-        .addChoices(
-          { name: "CARD", value: "CARD" },
-          { name: "CRYPTO", value: "CRYPTO" },
-          { name: "BOTH", value: "BOTH" }
-        )
-    )
     .addChannelOption((opt) =>
       opt
         .setName("channel")
@@ -105,14 +78,8 @@ export const commandDefinitions = [
     )
     .addStringOption((opt) =>
       opt
-        .setName("card_button_label")
-        .setDescription("Optional custom label for card button")
-        .setRequired(false)
-    )
-    .addStringOption((opt) =>
-      opt
         .setName("crypto_button_label")
-        .setDescription("Optional custom label for crypto button")
+        .setDescription("Optional custom label for the buy button")
         .setRequired(false)
     ),
 
@@ -135,19 +102,9 @@ export const commandDefinitions = [
 
   new SlashCommandBuilder()
     .setName("buy")
-    .setDescription("Create a checkout link for a product")
+    .setDescription("Buy a product with crypto")
     .addStringOption((opt) =>
       opt.setName("product_id").setDescription("Product ID").setRequired(true)
-    )
-    .addStringOption((opt) =>
-      opt
-        .setName("payment_method")
-        .setDescription("CARD (Stripe) or CRYPTO (NOWPayments)")
-        .setRequired(true)
-        .addChoices(
-          { name: "CARD", value: "CARD" },
-          { name: "CRYPTO", value: "CRYPTO" }
-        )
     )
     .addIntegerOption((opt) =>
       opt.setName("quantity").setDescription("Quantity").setRequired(false)

@@ -8,7 +8,6 @@ import { PLAN_CONFIG } from "../../config/plans.js";
 import { COIN_OPTIONS, coinLabel } from "../../config/coins.js";
 import { env } from "../../config/env.js";
 import { prisma } from "../../db/prisma.js";
-import { createCheckoutForVariant } from "../../services/checkoutService.js";
 import { addLicenseKeysToVariant } from "../../services/inventoryService.js";
 import {
   createOrderForVariant,
@@ -26,25 +25,12 @@ import {
   listProductsBySeller,
   upsertGuildAndSeller
 } from "../../services/sellerService.js";
-import { createStripeConnectOnboardingLink } from "../../services/stripeService.js";
 import { ephemeralPanel, panelEdit, EPHEMERAL_V2_DEFER, type PanelButton } from "../ui/cv2.js";
 
 const SETUP_REQUIRED = ephemeralPanel({
   title: "Setup required",
   body: "Run `/setup` first."
 });
-
-/**
- * Discord rejects link-button URLs that aren't public http(s) (e.g. localhost
- * mock URLs), which breaks the whole message. Only render a link button for a
- * valid public URL; otherwise the URL is shown in the body text instead.
- */
-function linkButton(label: string, url: string | undefined): PanelButton[] {
-  if (url && /^https?:\/\//i.test(url) && !/localhost|127\.0\.0\.1/i.test(url)) {
-    return [{ label, url, style: "link" }];
-  }
-  return [];
-}
 
 function requireGuild(interaction: ChatInputCommandInteraction | ButtonInteraction): string {
   if (!interaction.guildId) {
@@ -59,50 +45,6 @@ function asTextChannel(channel: unknown): TextBasedChannel | null {
     return channel.isTextBased() ? (channel as TextBasedChannel) : null;
   }
   return null;
-}
-
-async function createCheckoutFromGuildProductContext(input: {
-  discordGuildId: string;
-  productId: string;
-  buyerDiscordUserId: string;
-  paymentMethod: PaymentMethod;
-  quantity: number;
-}) {
-  const guild = await prisma.guild.findUnique({
-    where: { discordGuildId: input.discordGuildId },
-    select: { id: true }
-  });
-
-  if (!guild) {
-    throw new Error("Storefront not initialized yet.");
-  }
-
-  const product = await prisma.product.findFirst({
-    where: { id: input.productId, guildId: guild.id, isActive: true },
-    include: {
-      variants: { where: { isActive: true }, orderBy: { createdAt: "asc" } },
-      seller: true
-    }
-  });
-
-  if (!product || !product.variants.length) {
-    throw new Error("Product not found or unavailable.");
-  }
-
-  const variant = product.variants[0];
-
-  const checkout = await createCheckoutForVariant({
-    guildId: guild.id,
-    sellerId: product.sellerId,
-    buyerDiscordUserId: input.buyerDiscordUserId,
-    variantId: variant.id,
-    quantity: input.quantity,
-    paymentMethod: input.paymentMethod,
-    productName: product.name,
-    sellerStripeAccountId: product.seller.stripeConnectedAccountId
-  });
-
-  return { checkout, product };
 }
 
 async function resolveGuildProduct(discordGuildId: string, productId: string) {
@@ -175,8 +117,8 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
 
   if (!interaction.customId.startsWith("buypanel:")) return;
 
-  const [, productId, paymentMode] = interaction.customId.split(":");
-  if (!productId || (paymentMode !== "CARD" && paymentMode !== "CRYPTO")) {
+  const [, productId] = interaction.customId.split(":");
+  if (!productId) {
     await interaction.reply(
       ephemeralPanel({
         title: "Invalid button",
@@ -190,38 +132,14 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     const discordGuildId = requireGuild(interaction);
     await interaction.deferReply(EPHEMERAL_V2_DEFER);
 
-    if (paymentMode === "CRYPTO") {
-      // In-Discord crypto flow: pick a coin next (address/QR/timer follows).
-      const { order, product } = await createCryptoOrder({
-        discordGuildId,
-        productId,
-        buyerDiscordUserId: interaction.user.id
-      });
-      await interaction.editReply(
-        coinSelectPanel(order.id, product.name, order.subtotalCents, order.currency)
-      );
-      return;
-    }
-
-    // Card → hosted Stripe checkout link (cards can't be collected inside Discord).
-    const { checkout, product } = await createCheckoutFromGuildProductContext({
+    // In-Discord crypto flow: pick a coin next (address/QR/timer follows).
+    const { order, product } = await createCryptoOrder({
       discordGuildId,
       productId,
-      buyerDiscordUserId: interaction.user.id,
-      paymentMethod: paymentMode as PaymentMethod,
-      quantity: 1
+      buyerDiscordUserId: interaction.user.id
     });
-
     await interaction.editReply(
-      panelEdit({
-        title: `Checkout — ${product.name}`,
-        body:
-          `Payment: **CARD**\n` +
-          `Order: \`${checkout.orderId}\`\n\n` +
-          `**Pay here:** ${checkout.checkoutUrl}\n\n` +
-          "Delivery updates are sent here privately once payment confirms.",
-        buttons: linkButton("Pay now", checkout.checkoutUrl)
-      })
+      coinSelectPanel(order.id, product.name, order.subtotalCents, order.currency)
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create checkout.";
@@ -317,39 +235,6 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
           `You're on the **${plan.label}** tier.\n` +
           `Transaction fee: **${(plan.feeRate * 100).toFixed(2)}%**  •  Monthly: **$${plan.monthlyPriceUsd}**\n\n` +
           "Next: use `/product_create` to add your first product."
-      })
-    );
-    return;
-  }
-
-  if (command === "stripe_connect") {
-    const discordGuildId = requireGuild(interaction);
-    const seller = await findSellerByGuildAndUser({
-      discordGuildId,
-      discordUserId: interaction.user.id
-    });
-
-    if (!seller) {
-      await interaction.reply(SETUP_REQUIRED);
-      return;
-    }
-
-    const refreshUrl = interaction.options.getString("refresh_url", true);
-    const returnUrl = interaction.options.getString("return_url", true);
-
-    const onboarding = await createStripeConnectOnboardingLink({
-      sellerId: seller.id,
-      refreshUrl,
-      returnUrl
-    });
-
-    await interaction.reply(
-      ephemeralPanel({
-        title: `Stripe onboarding ready (${onboarding.mocked ? "mock" : "live"})`,
-        body:
-          `Account: \`${onboarding.accountId}\`\n\n` +
-          `**Onboarding link:** ${onboarding.onboardingUrl}`,
-        buttons: linkButton("Open Stripe onboarding", onboarding.onboardingUrl)
       })
     );
     return;
@@ -458,12 +343,10 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     }
 
     const productId = interaction.options.getString("product_id", true);
-    const paymentMode = interaction.options.getString("payment_mode") || "BOTH";
     const note = interaction.options.getString("note") || undefined;
     const panelTitle = interaction.options.getString("panel_title") || undefined;
     const panelDescription = interaction.options.getString("panel_description") || undefined;
     const imageUrl = interaction.options.getString("image_url") || undefined;
-    const cardButtonLabel = interaction.options.getString("card_button_label") || undefined;
     const cryptoButtonLabel = interaction.options.getString("crypto_button_label") || undefined;
 
     const optionChannel = interaction.options.getChannel("channel");
@@ -484,12 +367,10 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
       discordGuildId,
       sellerDiscordUserId: interaction.user.id,
       productId,
-      paymentMode,
       note,
       panelTitle,
       panelDescription,
       imageUrl,
-      cardButtonLabel,
       cryptoButtonLabel
     });
 
@@ -584,7 +465,7 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     await interaction.reply(
       ephemeralPanel({
         title: "Storefront",
-        body: `${lines.join("\n")}\n\nUse \`/buy product_id:<id> payment_method:CARD|CRYPTO\``
+        body: `${lines.join("\n")}\n\nUse \`/buy product_id:<id>\` to pay with crypto.`
       })
     );
     return;
@@ -593,27 +474,18 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
   if (command === "buy") {
     const discordGuildId = requireGuild(interaction);
     const productId = interaction.options.getString("product_id", true);
-    const paymentMethod = interaction.options.getString("payment_method", true) as PaymentMethod;
-    const quantity = interaction.options.getInteger("quantity") ?? 1;
 
-    const { checkout, product } = await createCheckoutFromGuildProductContext({
+    await interaction.deferReply(EPHEMERAL_V2_DEFER);
+
+    // In-Discord crypto flow: pick a coin next (address/QR/timer follows).
+    const { order, product } = await createCryptoOrder({
       discordGuildId,
       productId,
-      buyerDiscordUserId: interaction.user.id,
-      paymentMethod,
-      quantity
+      buyerDiscordUserId: interaction.user.id
     });
 
-    await interaction.reply(
-      ephemeralPanel({
-        title: `Checkout — ${product.name}`,
-        body:
-          `Payment: **${paymentMethod}**\n` +
-          `Order: \`${checkout.orderId}\`\n\n` +
-          `**Pay here:** ${checkout.checkoutUrl}\n\n` +
-          "Delivery updates are sent here privately once payment confirms.",
-        buttons: linkButton("Pay now", checkout.checkoutUrl)
-      })
+    await interaction.editReply(
+      coinSelectPanel(order.id, product.name, order.subtotalCents, order.currency)
     );
     return;
   }

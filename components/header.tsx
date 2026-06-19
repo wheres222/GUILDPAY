@@ -6,6 +6,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { DiscordIcon } from "@/components/discord-icon"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { siteConfig } from "@/lib/site-config"
 
 const navItems = [
@@ -55,6 +56,7 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
+          <ThemeToggle />
           <Link href="/signin">
             <Button variant="ghost" size="sm">
               Sign In
@@ -68,6 +70,7 @@ export function Header() {
           </Button>
         </div>
 
+        <ThemeToggle className="md:hidden" />
         <button
           className="rounded-lg p-2 text-foreground transition-colors hover:bg-secondary md:hidden"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

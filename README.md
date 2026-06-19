@@ -45,8 +45,6 @@ npm start
 - `BASE_URL`
 - `DISCORD_TOKEN`
 - `DISCORD_CLIENT_ID`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
 - `NOWPAYMENTS_API_KEY`
 - `NOWPAYMENTS_IPN_SECRET`
 - `DATABASE_URL`
@@ -58,7 +56,6 @@ npm start
 - `PATCH /api/products/:productId`
 - `POST /api/discord/panels/create`
 - `POST /api/checkout/create`
-- `POST /api/webhooks/stripe`
 - `POST /api/webhooks/nowpayments`
 - `GET /api/webhooks/events`
 - `GET /api/dashboard/seller/:sellerId/*`

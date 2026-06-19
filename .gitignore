@@ -5,3 +5,7 @@ dist
 .env.local
 .vercel
 *.tsbuildinfo
+
+# runtime logs
+bot/bot.log
+*.log

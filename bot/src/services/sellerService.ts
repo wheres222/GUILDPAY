@@ -53,7 +53,6 @@ export async function setSellerPlan(input: {
 
 export async function setSellerConnections(input: {
   sellerId: string;
-  stripeConnectedAccountId?: string;
   cryptoPayoutAddress?: string;
   webhookDeliveryUrl?: string;
   webhookDeliverySecret?: string;
@@ -61,7 +60,6 @@ export async function setSellerConnections(input: {
   return prisma.seller.update({
     where: { id: input.sellerId },
     data: {
-      stripeConnectedAccountId: input.stripeConnectedAccountId,
       cryptoPayoutAddress: input.cryptoPayoutAddress,
       webhookDeliveryUrl: input.webhookDeliveryUrl,
       webhookDeliverySecret: input.webhookDeliverySecret

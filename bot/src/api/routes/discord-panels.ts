@@ -9,12 +9,10 @@ const createPanelSchema = z.object({
   channelId: z.string().min(1),
   sellerDiscordUserId: z.string().min(1),
   productId: z.string().min(1),
-  paymentMode: z.enum(["CARD", "CRYPTO", "BOTH"]).optional(),
   note: z.string().max(500).optional(),
   panelTitle: z.string().max(256).optional(),
   panelDescription: z.string().max(1500).optional(),
   imageUrl: z.string().url().optional(),
-  cardButtonLabel: z.string().max(80).optional(),
   cryptoButtonLabel: z.string().max(80).optional()
 });
 

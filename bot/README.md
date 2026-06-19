@@ -2,7 +2,6 @@
 
 Discord-native multi-seller commerce bot with:
 - Tiered platform fees
-- Stripe Connect card checkout
 - NOWPayments crypto checkout
 - Paid-only delivery pipeline
 - Idempotent webhooks
@@ -23,7 +22,6 @@ Discord-native multi-seller commerce bot with:
 
 ## Bot Commands
 - `/setup`
-- `/stripe_connect`
 - `/product_create`
 - `/product_list`
 - `/panel_create`
@@ -38,7 +36,6 @@ Discord-native multi-seller commerce bot with:
 - `GET /api/health`
 - `POST /api/setup`
 - `POST /api/setup/connect`
-- `POST /api/setup/connect/stripe/link`
 
 ### Products / Checkout / Orders
 - `POST /api/products`
@@ -58,7 +55,6 @@ Discord-native multi-seller commerce bot with:
 - `POST /api/testing/orders/:orderId/complete`
 
 ### Webhooks
-- `POST /api/webhooks/stripe`
 - `POST /api/webhooks/nowpayments`
 
 ## Order State Machine
@@ -81,7 +77,6 @@ cp .env.example .env
 ```
 
 - Discord keys (required for live bot)
-- Stripe keys (required for card)
 - NOWPayments keys (required for crypto)
 - `DATABASE_URL` (defaults to local sqlite)
 
@@ -97,8 +92,7 @@ npm run dev
 ## Helper Scripts
 - `npm run seed` — create sample guild/seller/products via API
 - `npm run e2e:mock` — run mock end-to-end flow against local API
-- `npm run webhook:replay -- nowpayments <orderId>`
-- `npm run webhook:replay -- stripe <orderId>`
+- `npm run webhook:replay -- <orderId>`
 
 ## Notes
 - In scaffold mode (no provider keys), checkout links are mocked so flow can still be tested.

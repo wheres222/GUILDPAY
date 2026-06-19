@@ -46,7 +46,6 @@ async function main() {
     sellerDiscordUserId: "seller-e2e",
     buyerDiscordUserId: "buyer-e2e",
     productId: product.json.product.id,
-    paymentMethod: "CARD",
     quantity: 1
   });
   if (!checkout.ok) throw new Error(`Checkout failed: ${checkout.status} ${JSON.stringify(checkout.json)}`);

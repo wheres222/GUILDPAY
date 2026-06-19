@@ -1,4 +1,3 @@
-import { PaymentMethod } from "@prisma/client";
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../db/prisma.js";
@@ -12,8 +11,7 @@ const createCheckoutSchema = z.object({
   buyerDiscordUserId: z.string().min(1),
   productId: z.string().min(1),
   variantId: z.string().optional(),
-  quantity: z.number().int().positive().default(1),
-  paymentMethod: z.nativeEnum(PaymentMethod)
+  quantity: z.number().int().positive().default(1)
 });
 
 checkoutRouter.post("/checkout/create", async (req, res, next) => {
@@ -70,9 +68,7 @@ checkoutRouter.post("/checkout/create", async (req, res, next) => {
       buyerDiscordUserId: input.buyerDiscordUserId,
       variantId: variant.id,
       quantity: input.quantity,
-      paymentMethod: input.paymentMethod,
-      productName: product.name,
-      sellerStripeAccountId: seller.stripeConnectedAccountId
+      productName: product.name
     });
 
     return res.status(201).json({

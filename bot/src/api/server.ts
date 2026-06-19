@@ -16,7 +16,6 @@ import { discordRouter } from "./routes/discord.js";
 export function createApiServer() {
   const app = express();
 
-  app.use("/api/webhooks/stripe", express.raw({ type: "application/json" }));
   app.use("/api/webhooks/nowpayments", express.raw({ type: "application/json" }));
 
   app.use(express.json());

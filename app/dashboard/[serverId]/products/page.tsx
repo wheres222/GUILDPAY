@@ -1,30 +1,17 @@
 import Link from "next/link"
-import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Plus, ListOrdered, Code2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { apiFetch, formatUsd } from "@/lib/backend-api"
+import { apiFetch } from "@/lib/backend-api"
 import { resolveDashboardContext } from "@/lib/dashboard-context"
+import { ProductsGrid, type GridProduct } from "./products-grid"
+
+export const dynamic = "force-dynamic"
 
 type ProductsResponse = {
   success: boolean
-  products: Array<{
-    id: string
-    name: string
-    description?: string | null
-    imageUrl?: string | null
-    isActive: boolean
-    createdAt: string
-    variants: Array<{
-      id: string
-      name: string
-      priceCents: number
-      currency: string
-      deliveryType: string
-      isActive: boolean
-      deliveryValue?: string | null
-    }>
-  }>
+  products: Array<
+    GridProduct & { description?: string | null; createdAt: string }
+  >
 }
 
 export default async function ProductsPage({
@@ -32,7 +19,7 @@ export default async function ProductsPage({
   searchParams,
 }: {
   params: Promise<{ serverId: string }>
-  searchParams?: Promise<{ panel?: string; product?: string; error?: string }>
+  searchParams?: Promise<{ product?: string; error?: string; guide?: string }>
 }) {
   const { serverId } = await params
   const sp = await searchParams
@@ -46,384 +33,80 @@ export default async function ProductsPage({
       const res = await apiFetch<ProductsResponse>(`/products/guild/${ctx.guildId}`)
       products = res.products
     } catch {
-      dataError = "Could not load products from API."
+      dataError = "Could not load products from the API."
     }
   }
 
-  async function createProductAction(formData: FormData) {
-    "use server"
-
-    const serverId = String(formData.get("serverId") || "")
-    const name = String(formData.get("name") || "").trim()
-    const description = String(formData.get("description") || "").trim()
-    const imageUrl = String(formData.get("imageUrl") || "").trim()
-    const priceCents = Number(formData.get("priceCents") || 0)
-    const deliveryType = String(formData.get("deliveryType") || "")
-    const deliveryValue = String(formData.get("deliveryValue") || "").trim()
-
-    const ctx = await resolveDashboardContext(serverId)
-    if (!ctx.guildId || !ctx.sellerId) {
-      redirect(`/dashboard/${serverId}/products?error=missing_context`)
-    }
-
-    if (!name || !priceCents || !deliveryType) {
-      redirect(`/dashboard/${serverId}/products?error=invalid_product_input`)
-    }
-
-    try {
-      await apiFetch("/products", {
-        method: "POST",
-        body: JSON.stringify({
-          guildId: ctx.guildId,
-          sellerId: ctx.sellerId,
-          name,
-          description: description || undefined,
-          imageUrl: imageUrl || undefined,
-          priceCents,
-          deliveryType,
-          deliveryValue: deliveryValue || undefined,
-        }),
-      })
-
-      revalidatePath(`/dashboard/${serverId}/products`)
-      redirect(`/dashboard/${serverId}/products?product=created`)
-    } catch {
-      redirect(`/dashboard/${serverId}/products?error=product_create_failed`)
-    }
-  }
-
-  async function createPanelAction(formData: FormData) {
-    "use server"
-
-    const serverId = String(formData.get("serverId") || "")
-    const productId = String(formData.get("productId") || "")
-    const channelId = String(formData.get("channelId") || "")
-    const paymentMode = String(formData.get("paymentMode") || "BOTH")
-    const note = String(formData.get("note") || "").trim()
-    const panelTitle = String(formData.get("panelTitle") || "").trim()
-    const panelDescription = String(formData.get("panelDescription") || "").trim()
-    const imageUrl = String(formData.get("imageUrl") || "").trim()
-    const cardButtonLabel = String(formData.get("cardButtonLabel") || "").trim()
-    const cryptoButtonLabel = String(formData.get("cryptoButtonLabel") || "").trim()
-
-    const ctx = await resolveDashboardContext(serverId)
-    if (!ctx.session?.user?.id) {
-      redirect(`/dashboard/${serverId}/products?error=auth_required`)
-    }
-
-    try {
-      await apiFetch<{ success: boolean; panel: { url: string } }>("/discord/panels/create", {
-        method: "POST",
-        body: JSON.stringify({
-          discordGuildId: serverId,
-          sellerDiscordUserId: ctx.session.user.id,
-          productId,
-          channelId,
-          paymentMode,
-          note: note || undefined,
-          panelTitle: panelTitle || undefined,
-          panelDescription: panelDescription || undefined,
-          imageUrl: imageUrl || undefined,
-          cardButtonLabel: cardButtonLabel || undefined,
-          cryptoButtonLabel: cryptoButtonLabel || undefined,
-        }),
-      })
-
-      revalidatePath(`/dashboard/${serverId}/products`)
-      redirect(`/dashboard/${serverId}/products?panel=created`)
-    } catch {
-      redirect(`/dashboard/${serverId}/products?error=panel_failed`)
-    }
-  }
-
-  async function updateProductAction(formData: FormData) {
-    "use server"
-
-    const serverId = String(formData.get("serverId") || "")
-    const productId = String(formData.get("productId") || "")
-    const name = String(formData.get("name") || "").trim()
-    const description = String(formData.get("description") || "").trim()
-    const imageUrl = String(formData.get("imageUrl") || "").trim()
-    const priceCents = Number(formData.get("priceCents") || 0)
-    const isActive = String(formData.get("isActive") || "") === "on"
-
-    const ctx = await resolveDashboardContext(serverId)
-    if (!ctx.sellerId) {
-      redirect(`/dashboard/${serverId}/products?error=missing_seller`)
-    }
-
-    try {
-      await apiFetch(`/products/${productId}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          sellerId: ctx.sellerId,
-          name: name || undefined,
-          description: description || undefined,
-          imageUrl: imageUrl || null,
-          priceCents: priceCents || undefined,
-          isActive,
-        }),
-      })
-
-      revalidatePath(`/dashboard/${serverId}/products`)
-      redirect(`/dashboard/${serverId}/products?product=updated`)
-    } catch {
-      redirect(`/dashboard/${serverId}/products?error=product_update_failed`)
-    }
-  }
+  const showGuide = sp?.guide !== "off" && products.length === 0
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-6 flex flex-col gap-2">
-        <h1 className="text-xl font-bold text-foreground sm:text-2xl" style={{ fontFamily: "var(--font-display)" }}>
-          Products
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Manage product pricing, delivery mode, and channel buy-panels from one place.
-        </p>
+      {/* Header */}
+      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h1
+            className="text-xl font-bold text-foreground sm:text-2xl"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Products
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">Manage your product inventory.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-2">
+            <Code2 className="h-4 w-4" /> Embed Products
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2">
+            <ListOrdered className="h-4 w-4" /> Reorder
+          </Button>
+          <Button asChild size="sm" className="gap-2">
+            <Link href={`/dashboard/${serverId}/products/new`}>
+              <Plus className="h-4 w-4" /> Create Product
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      {sp?.product === "created" ? (
-        <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
+      {sp?.product === "created" && (
+        <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
           Product created successfully.
         </div>
-      ) : null}
-
-      {sp?.panel === "created" ? (
-        <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
-          Product panel posted successfully.
-        </div>
-      ) : null}
-
-      {sp?.product === "updated" ? (
-        <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
-          Product updated successfully.
-        </div>
-      ) : null}
-
-      {sp?.error ? (
-        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+      )}
+      {sp?.error && (
+        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
           Action failed: {sp.error}
         </div>
-      ) : null}
-
-      {dataError ? (
-        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+      )}
+      {dataError && (
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
           {dataError}
         </div>
-      ) : null}
+      )}
 
-      <Card className="mb-6 border-border/60">
-        <CardHeader>
-          <CardTitle className="text-base">Create Product</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={createProductAction} className="grid gap-3 sm:grid-cols-2">
-            <input type="hidden" name="serverId" value={serverId} />
+      {/* Get started banner */}
+      {showGuide && (
+        <div className="relative mb-6 overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-primary/10 via-card to-card p-6">
+          <Link
+            href={`/dashboard/${serverId}/products?guide=off`}
+            className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </Link>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Get started</p>
+          <h2 className="mt-2 text-xl font-bold text-foreground">Create your first product</h2>
+          <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+            Add a product with a name, price, and deliverables, then publish it to your storefront.
+            You can set up stock, custom fields, discount codes, and more as you go.
+          </p>
+          <Button asChild className="mt-4 gap-2">
+            <Link href={`/dashboard/${serverId}/products/new`}>
+              <Plus className="h-4 w-4" /> Create Product
+            </Link>
+          </Button>
+        </div>
+      )}
 
-            <input
-              name="name"
-              placeholder="Product name"
-              className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-              required
-            />
-            <input
-              name="priceCents"
-              type="number"
-              min={1}
-              step={1}
-              placeholder="Price in cents (e.g., 1999)"
-              className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-              required
-            />
-
-            <input
-              name="imageUrl"
-              placeholder="Optional product image URL"
-              className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-            />
-
-            <select
-              name="deliveryType"
-              className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-              defaultValue="FILE_LINK"
-            >
-              <option value="FILE_LINK">FILE_LINK</option>
-              <option value="LICENSE_KEY">LICENSE_KEY</option>
-              <option value="WEBHOOK">WEBHOOK</option>
-            </select>
-            <input
-              name="deliveryValue"
-              placeholder="Delivery value (URL or endpoint for FILE_LINK/WEBHOOK)"
-              className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-            />
-
-            <textarea
-              name="description"
-              rows={3}
-              placeholder="Optional product description"
-              className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground sm:col-span-2"
-            />
-
-            <div className="sm:col-span-2">
-              <Button type="submit">Create Product</Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4">
-        {products.length ? (
-          products.map((product) => {
-            const variant = product.variants[0]
-            return (
-              <Card key={product.id} className="border-border/60">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold text-foreground">{product.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid gap-2 text-sm sm:grid-cols-4">
-                    <p className="text-muted-foreground">
-                      Product ID: <span className="font-mono text-foreground">{product.id}</span>
-                    </p>
-                    <p className="text-muted-foreground">
-                      Price: <span className="font-medium text-foreground">{variant ? formatUsd(variant.priceCents) : "-"}</span>
-                    </p>
-                    <p className="text-muted-foreground">
-                      Delivery: <span className="font-medium text-foreground">{variant?.deliveryType || "-"}</span>
-                    </p>
-                    <p className="text-muted-foreground">
-                      Status: <span className="font-medium text-foreground">{product.isActive ? "Active" : "Inactive"}</span>
-                    </p>
-                  </div>
-
-                  <form action={updateProductAction} className="grid gap-2 rounded-lg border border-border/60 p-3 sm:grid-cols-2">
-                    <input type="hidden" name="serverId" value={serverId} />
-                    <input type="hidden" name="productId" value={product.id} />
-
-                    <input
-                      name="name"
-                      defaultValue={product.name}
-                      placeholder="Product name"
-                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-                    />
-
-                    <input
-                      name="priceCents"
-                      type="number"
-                      min={1}
-                      step={1}
-                      defaultValue={variant?.priceCents || 0}
-                      placeholder="Price in cents"
-                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-                    />
-
-                    <input
-                      name="imageUrl"
-                      defaultValue={product.imageUrl || ""}
-                      placeholder="Product image URL"
-                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-                    />
-
-                    <label className="flex items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm text-foreground">
-                      <input type="checkbox" name="isActive" defaultChecked={product.isActive} />
-                      Product active
-                    </label>
-
-                    <textarea
-                      name="description"
-                      rows={2}
-                      defaultValue={product.description || ""}
-                      placeholder="Product description"
-                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground sm:col-span-2"
-                    />
-
-                    <div className="sm:col-span-2">
-                      <Button type="submit" size="sm" variant="outline">Save Product</Button>
-                    </div>
-                  </form>
-
-                  <form action={createPanelAction} className="grid gap-2 rounded-lg border border-border/60 p-3 sm:grid-cols-2">
-                    <input type="hidden" name="serverId" value={serverId} />
-                    <input type="hidden" name="productId" value={product.id} />
-
-                    <input
-                      name="channelId"
-                      placeholder="Discord channel ID"
-                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-                      required
-                    />
-
-                    <select
-                      name="paymentMode"
-                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-                      defaultValue="BOTH"
-                    >
-                      <option value="BOTH">Card + Crypto</option>
-                      <option value="CARD">Card only</option>
-                      <option value="CRYPTO">Crypto only</option>
-                    </select>
-
-                    <input
-                      name="panelTitle"
-                      placeholder="Optional panel title override"
-                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-                    />
-                    <input
-                      name="imageUrl"
-                      placeholder="Optional image URL"
-                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-                    />
-
-                    <input
-                      name="cardButtonLabel"
-                      placeholder="Card button label (optional)"
-                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-                    />
-                    <input
-                      name="cryptoButtonLabel"
-                      placeholder="Crypto button label (optional)"
-                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground"
-                    />
-
-                    <textarea
-                      name="panelDescription"
-                      rows={2}
-                      placeholder="Optional panel description"
-                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground sm:col-span-2"
-                    />
-                    <textarea
-                      name="note"
-                      rows={2}
-                      placeholder="Optional extra note"
-                      className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground sm:col-span-2"
-                    />
-
-                    <div className="sm:col-span-2">
-                      <Button type="submit" size="sm">Post Buy Panel</Button>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
-            )
-          })
-        ) : (
-          <Card className="border-border/60">
-            <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              No products found. Create one above or in Discord with <code>/product_create</code>.
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      <div className="mt-6 flex gap-2">
-        <Button asChild variant="outline">
-          <Link href={`/dashboard/${serverId}/products/inventory`}>Inventory</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href={`/dashboard/${serverId}/orders`}>View Orders</Link>
-        </Button>
-      </div>
+      <ProductsGrid serverId={serverId} products={products} />
     </div>
   )
 }

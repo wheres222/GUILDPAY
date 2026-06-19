@@ -9,7 +9,7 @@ async function main() {
 
   app.listen(env.PORT, () => {
     console.log(`API listening on :${env.PORT}`);
-    console.log(`Features => discord:${features.discordEnabled} stripe:${features.stripeEnabled} nowpayments:${features.nowPaymentsEnabled}`);
+    console.log(`Features => discord:${features.discordEnabled} nowpayments:${features.nowPaymentsEnabled}`);
   });
 
   await registerCommands();

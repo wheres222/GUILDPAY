@@ -1,6 +1,5 @@
 import { PaymentProvider, WebhookEventStatus } from "@prisma/client";
 import { Router } from "express";
-import Stripe from "stripe";
 import { z } from "zod";
 import { env, features } from "../../config/env.js";
 import { prisma } from "../../db/prisma.js";
@@ -19,12 +18,10 @@ import {
   markWebhookEventVerified,
   saveWebhookEventIdempotent
 } from "../../services/orderService.js";
-import { stripe } from "../../services/stripeService.js";
 import { verifyNowpaymentsSignature } from "../../services/nowPaymentsService.js";
 import {
   NormalizedWebhookEvent,
-  normalizeNowpaymentsWebhook,
-  normalizeStripeWebhook
+  normalizeNowpaymentsWebhook
 } from "../../services/webhookNormalizer.js";
 
 export const webhookRouter = Router();
@@ -125,52 +122,6 @@ webhookRouter.get("/webhooks/events", async (req, res, next) => {
     res.json({ success: true, events });
   } catch (error) {
     next(error);
-  }
-});
-
-webhookRouter.post("/webhooks/stripe", async (req, res) => {
-  if (!stripe || !features.stripeEnabled || !env.STRIPE_WEBHOOK_SECRET) {
-    return res.status(503).json({ success: false, message: "Stripe webhook not configured" });
-  }
-
-  const signature = req.headers["stripe-signature"];
-  if (!signature || typeof signature !== "string") {
-    return res.status(400).json({ error: "Missing stripe-signature" });
-  }
-
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, signature, env.STRIPE_WEBHOOK_SECRET);
-  } catch {
-    return res.status(400).json({ error: "Invalid signature" });
-  }
-
-  const normalized = normalizeStripeWebhook(event);
-
-  const saved = await saveWebhookEventIdempotent({
-    provider: normalized.provider,
-    eventId: normalized.eventId,
-    eventType: normalized.eventType,
-    orderId: normalized.orderId,
-    paymentReference: normalized.paymentReference,
-    payload: normalized.raw
-  });
-
-  if (!saved.isNew) {
-    return res.status(200).json({ received: true, deduped: true });
-  }
-
-  try {
-    await processNormalizedWebhookEvent(normalized);
-    return res.status(200).json({ received: true });
-  } catch (error) {
-    await markWebhookEventFailed({
-      provider: normalized.provider,
-      eventId: normalized.eventId,
-      orderId: normalized.orderId,
-      reason: errorMessage(error)
-    });
-    return res.status(500).json({ received: false, message: "Webhook processing failed" });
   }
 });
 

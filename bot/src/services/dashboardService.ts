@@ -80,7 +80,6 @@ export async function sellerProfile(sellerId: string) {
       id: true,
       discordUserId: true,
       planTier: true,
-      stripeConnectedAccountId: true,
       cryptoPayoutAddress: true,
       webhookDeliveryUrl: true,
       webhookDeliverySecret: true,

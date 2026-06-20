@@ -40,7 +40,6 @@ interface Variant {
   serials: string
   minQty: string
   maxQty: string
-  redirectUrl: string
   selection: Selection
   manageStock: boolean
 }
@@ -57,7 +56,6 @@ function newVariant(name = ""): Variant {
     serials: "",
     minQty: "",
     maxQty: "",
-    redirectUrl: "",
     selection: "last",
     manageStock: true,
   }
@@ -396,20 +394,6 @@ export function VariantsEditor({ deliverable }: { deliverable: string }) {
                   >
                     <MessageCircle className="h-4 w-4" /> Configure Discord Servers &amp; Roles
                   </button>
-                </Field>
-
-                {/* Redirect URL */}
-                <Field
-                  label="Redirect URL"
-                  optional
-                  hint="Redirect your customers to this URL after a payment has been completed. If multiple items have been purchased, only the first URL will be used."
-                >
-                  <input
-                    value={v.redirectUrl}
-                    onChange={(e) => update(v.id, { redirectUrl: e.target.value })}
-                    placeholder="https://example.com"
-                    className={inputCls}
-                  />
                 </Field>
               </div>
             )}

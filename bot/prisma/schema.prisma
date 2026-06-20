@@ -14,12 +14,10 @@ enum PlanTier {
 }
 
 enum PaymentMethod {
-  CARD
   CRYPTO
 }
 
 enum PaymentProvider {
-  STRIPE
   NOWPAYMENTS
 }
 
@@ -79,7 +77,6 @@ model Seller {
   guildId                   String
   discordUserId             String
   planTier                  PlanTier    @default(FREE)
-  stripeConnectedAccountId  String?
   cryptoPayoutAddress       String?
   webhookDeliveryUrl        String?
   webhookDeliverySecret     String?

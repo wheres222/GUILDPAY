@@ -132,12 +132,6 @@ export function CreateProductForm({ serverId, error }: { serverId: string; error
             <input name="name" required placeholder="Product Name" className={inputCls} />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-foreground">
-              URL Path <span className="font-normal text-muted-foreground">(optional)</span>
-            </label>
-            <input name="urlPath" placeholder="product-url-path" className={inputCls} />
-          </div>
-          <div>
             <label className="mb-1.5 block text-sm font-semibold text-foreground">Description</label>
             <textarea name="description" rows={5} placeholder="Describe your product…" className={inputCls} />
           </div>

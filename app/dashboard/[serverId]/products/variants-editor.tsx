@@ -128,12 +128,17 @@ export function VariantsEditor({ deliverable }: { deliverable: string }) {
     setOpenId(v.id)
   }
 
+  // The first variant feeds the backend. Submit its price/serials via hidden
+  // inputs that stay mounted even when the row is collapsed (the visible inputs
+  // below unmount on collapse, which previously dropped the values on submit).
+  const primary = variants[0]
+
   return (
     <div className="space-y-3">
-      {variants.map((v, index) => {
+      <input type="hidden" name="price" value={primary.price} />
+      <input type="hidden" name="serials" value={primary.serials} />
+      {variants.map((v) => {
         const open = openId === v.id
-        // Only the first variant feeds the backend create action.
-        const isPrimary = index === 0
         return (
           <div key={v.id} className="overflow-hidden rounded-lg border border-border/60">
             {/* Row header */}
@@ -189,7 +194,6 @@ export function VariantsEditor({ deliverable }: { deliverable: string }) {
                 <div className="grid gap-5 sm:grid-cols-2">
                   <Field label="Price">
                     <input
-                      name={isPrimary ? "price" : undefined}
                       value={v.price}
                       onChange={(e) => update(v.id, { price: e.target.value })}
                       type="number"
@@ -240,7 +244,6 @@ export function VariantsEditor({ deliverable }: { deliverable: string }) {
                       </div>
                       {v.manageStock && (
                         <textarea
-                          name={isPrimary ? "serials" : undefined}
                           value={v.serials}
                           onChange={(e) => update(v.id, { serials: e.target.value })}
                           rows={6}

@@ -9,6 +9,9 @@ import { cn } from "@/lib/utils"
 export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  // next-themes hydration guard: the server can't know the resolved theme, so we
+  // render a stable icon until the client mounts. A one-shot setState here is safe.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), [])
 
   const isDark = resolvedTheme === "dark"

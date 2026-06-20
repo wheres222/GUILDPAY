@@ -23,6 +23,10 @@ import {
 
 const DASH = "https://app.guildpay.io/dashboard/demo"
 
+// Stable reference time for the sample checkout embed, evaluated once at module
+// load (not during render) so the purity rule stays happy.
+const PREVIEW_NOW = Date.now()
+
 const SAMPLE_PRODUCTS: PreviewProduct[] = [
   {
     id: "p1",
@@ -103,7 +107,7 @@ export default function PreviewPage() {
           fiatAmount: 29.99,
           fiatCurrency: "USD",
           orderId: "a1b2c3d4",
-          expiresAt: new Date(Date.now() + 15 * 60000).toISOString(),
+          expiresAt: new Date(PREVIEW_NOW + 15 * 60000).toISOString(),
         })
         return { embeds: r.data.embeds as Embed[], ephemeral: true }
       }

@@ -255,7 +255,8 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     }
 
     const name = interaction.options.getString("name", true);
-    const priceCents = interaction.options.getInteger("price_usd", true);
+    // `price_usd` is whole US dollars; the DB stores cents.
+    const priceCents = interaction.options.getInteger("price_usd", true) * 100;
     const deliveryType = interaction.options.getString("delivery_type", true) as
       | "LICENSE_KEY"
       | "FILE_LINK"

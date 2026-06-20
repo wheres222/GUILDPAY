@@ -12,7 +12,7 @@ export const commandDefinitions = [
       opt.setName("name").setDescription("Product name").setRequired(true)
     )
     .addIntegerOption((opt) =>
-      opt.setName("price_usd").setDescription("Price in USD cents (e.g., 1999)").setRequired(true)
+      opt.setName("price_usd").setDescription("Price in whole US dollars (e.g., 5 = $5.00)").setMinValue(1).setRequired(true)
     )
     .addStringOption((opt) =>
       opt

@@ -17,6 +17,7 @@ import {
   Bell,
   LogOut,
   Webhook,
+  Receipt,
   Menu,
   X,
 } from "lucide-react"
@@ -51,6 +52,7 @@ const navItems: NavItem[] = [
       { label: "Completed", href: "/orders/completed" },
     ],
   },
+  { label: "Transactions", href: "/transactions", icon: Receipt },
   { label: "Wallets", href: "/wallets", icon: Wallet },
   { label: "Customize", href: "/storefront", icon: Store },
   { label: "Webhooks", href: "/webhooks", icon: Webhook },

@@ -251,7 +251,16 @@ export function ProductsGrid({
             return (
               <div
                 key={p.id}
-                className={`overflow-hidden rounded-xl border border-border/60 bg-card ${view === "list" ? "flex items-center" : ""}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => setEdit(p)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    setEdit(p)
+                  }
+                }}
+                className={`group cursor-pointer overflow-hidden rounded-xl border border-border/60 bg-card transition-colors hover:border-primary/50 ${view === "list" ? "flex items-center" : ""}`}
               >
                 {/* Image */}
                 <div
@@ -263,6 +272,9 @@ export function ProductsGrid({
                   ) : (
                     <Package className="h-8 w-8 text-muted-foreground/40" />
                   )}
+                  <div className="absolute right-2 top-2 hidden items-center gap-1 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium text-white group-hover:flex">
+                    <Pencil className="h-3 w-3" /> Edit
+                  </div>
                 </div>
 
                 {/* Body */}
@@ -293,15 +305,9 @@ export function ProductsGrid({
                   {/* Actions */}
                   <div className="mt-3 flex items-center gap-4 border-t border-border/50 pt-3 text-xs font-medium">
                     <button
-                      onClick={() => setEdit(p)}
-                      className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Edit
-                    </button>
-                    <button
                       disabled={busy === p.id}
-                      onClick={() =>
+                      onClick={(e) => {
+                        e.stopPropagation()
                         run(p.id, () =>
                           cloneProductAction({
                             serverId,
@@ -312,7 +318,7 @@ export function ProductsGrid({
                             imageUrl: p.imageUrl,
                           }),
                         )
-                      }
+                      }}
                       className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
                     >
                       {busy === p.id ? (
@@ -324,7 +330,10 @@ export function ProductsGrid({
                     </button>
                     <button
                       disabled={busy === p.id}
-                      onClick={() => run(p.id, () => deleteProductAction(serverId, p.id))}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        run(p.id, () => deleteProductAction(serverId, p.id))
+                      }}
                       className="inline-flex items-center gap-1 text-red-500 hover:text-red-400"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

@@ -1,10 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import {
-  Zap,
-  Info,
-  Search,
   Settings2,
   Send,
   Copy,
@@ -35,16 +33,15 @@ export interface Payout {
 interface Coin {
   ticker: string
   name: string
-  color: string
-  symbol: string
+  icon: string
   pay: string
 }
 
 const COINS: Coin[] = [
-  { ticker: "BTC", name: "Bitcoin", color: "#f7931a", symbol: "₿", pay: "btc" },
-  { ticker: "LTC", name: "Litecoin", color: "#a6a9aa", symbol: "Ł", pay: "ltc" },
-  { ticker: "ETH", name: "Ethereum", color: "#627eea", symbol: "Ξ", pay: "eth" },
-  { ticker: "SOL", name: "Solana", color: "#9945ff", symbol: "◎", pay: "sol" },
+  { ticker: "BTC", name: "Bitcoin", icon: "/crypto/btc.png", pay: "btc" },
+  { ticker: "LTC", name: "Litecoin", icon: "/crypto/ltc.png", pay: "ltc" },
+  { ticker: "ETH", name: "Ethereum", icon: "/crypto/eth.png", pay: "eth" },
+  { ticker: "SOL", name: "Solana", icon: "/crypto/sol.png", pay: "sol" },
 ]
 
 function money(cents: number) {
@@ -103,11 +100,8 @@ export function WalletsClient({
         {COINS.map((c) => (
           <div key={c.ticker} className="rounded-xl border border-border/60 bg-card p-4">
             <div className="mb-4 flex items-center gap-3">
-              <span
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-lg font-bold text-white"
-                style={{ backgroundColor: c.color }}
-              >
-                {c.symbol}
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/50">
+                <Image src={c.icon} alt={c.name} width={28} height={28} className="h-7 w-7 object-contain" />
               </span>
               <div>
                 <p className="text-sm font-semibold text-foreground">{c.name}</p>
@@ -133,22 +127,6 @@ export function WalletsClient({
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Info notices */}
-      <div className="space-y-2 rounded-xl border border-border/60 bg-card/40 p-4 text-sm">
-        <p className="flex gap-2 text-muted-foreground">
-          <Zap className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
-          <span><strong className="text-foreground">Automatic payouts.</strong> Received crypto is automatically forwarded to your configured payout address after each successful payment.</span>
-        </p>
-        <p className="flex gap-2 text-muted-foreground">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
-          <span><strong className="text-foreground">Delayed detection.</strong> Sometimes a payment may not be detected automatically. Funds stay in your wallet and can be withdrawn manually or with the next transaction.</span>
-        </p>
-        <p className="flex gap-2 text-muted-foreground">
-          <Search className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
-          <span><strong className="text-foreground">Manual processing.</strong> If a payment was not detected but the customer provides a TXID, look it up in Transaction History below to process the invoice.</span>
-        </p>
       </div>
 
       {/* Withdrawal History */}

@@ -2,9 +2,35 @@ import Link from "next/link"
 import { Eye, Image as ImageIcon, Layout, Palette, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { DiscordMessage, type Embed, type ActionRow } from "@/components/discord-embed"
+import { storefrontResponse, type PreviewProduct } from "@/lib/preview-embeds"
+
+const SAMPLE_PRODUCTS: PreviewProduct[] = [
+  {
+    id: "p1",
+    name: "Premium License Key",
+    description: "Lifetime activation key, delivered instantly via DM.",
+    price_amount: 4.99,
+    price_currency: "USD",
+    category: "Digital",
+  },
+  {
+    id: "p2",
+    name: "VIP Membership (30 days)",
+    description: "Get the @VIP role with perks for a month.",
+    price_amount: 9.99,
+    price_currency: "USD",
+    category: "Subscription",
+  },
+]
 
 export default async function StorefrontPage({ params }: { params: Promise<{ serverId: string }> }) {
   const { serverId } = await params
+  const store = storefrontResponse(SAMPLE_PRODUCTS).data as {
+    embeds?: Embed[]
+    components?: ActionRow[]
+    content?: string
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -29,8 +55,8 @@ export default async function StorefrontPage({ params }: { params: Promise<{ ser
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid gap-6 lg:grid-cols-5">
+        <div className="space-y-6 lg:col-span-3">
           <Card className="border-border/60">
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -95,16 +121,30 @@ export default async function StorefrontPage({ params }: { params: Promise<{ ser
           </Card>
         </div>
 
-        <Card className="border-border/60">
-          <CardHeader>
-            <CardTitle className="text-lg">MVP status</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>✅ Discord panel checkout flow is live.</p>
-            <p>✅ Paid-only delivery flow is live.</p>
-            <p>🟡 Public storefront theming is planned next.</p>
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-2 lg:sticky lg:top-6 lg:self-start">
+          <Card className="border-border/60">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <Eye className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Live preview</CardTitle>
+                  <CardDescription>An example of the storefront embed your bot posts in Discord.</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto rounded-lg">
+                <DiscordMessage
+                  embeds={store.embeds}
+                  components={store.components}
+                  content={store.content}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

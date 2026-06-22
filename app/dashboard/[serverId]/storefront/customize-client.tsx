@@ -71,7 +71,7 @@ function DefaultPreview({ botName, logoUrl, bannerUrl }: { botName: string; logo
         <Avatar botName={botName} logoUrl={logoUrl} />
         <div className="min-w-0 flex-1">
           <NameRow botName={botName} />
-          <div className="my-1 max-w-[432px] rounded border-l-4 border-[#5865f2] bg-[#2b2d31] py-2 pl-3 pr-4 text-[#dbdee1]">
+          <div className="my-1 max-w-[580px] rounded border-l-4 border-[#5865f2] bg-[#2b2d31] py-2 pl-3 pr-4 text-[#dbdee1]">
             <div className="flex gap-3">
               <div className="min-w-0 flex-1">
                 <div className="mb-1 mt-1 text-[16px] font-semibold text-[#f2f3f5]">Welcome to {botName || "GuildPay"} 🛒</div>
@@ -115,7 +115,7 @@ function V2Preview({ botName, logoUrl, bannerUrl }: { botName: string; logoUrl: 
         <Avatar botName={botName} logoUrl={logoUrl} />
         <div className="min-w-0 flex-1">
           <NameRow botName={botName} />
-          <div className="mt-1 max-w-[432px] rounded-lg border border-[#3f4248] bg-[#2b2d31] p-3 text-[#dbdee1]">
+          <div className="mt-1 max-w-[580px] rounded-lg border border-[#3f4248] bg-[#2b2d31] p-3 text-[#dbdee1]">
             {bannerUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={bannerUrl} alt="" className="mb-3 max-h-48 w-full rounded-lg object-cover" />
@@ -158,7 +158,7 @@ export function CustomizeClient() {
   return (
     <div className="grid gap-6 lg:grid-cols-5">
       {/* Editing column */}
-      <div className="space-y-6 lg:col-span-3">
+      <div className="space-y-6 lg:col-span-2">
         {/* Bot identity */}
         <Card className="border-border/60">
           <CardHeader>
@@ -285,7 +285,7 @@ export function CustomizeClient() {
       </div>
 
       {/* Live preview */}
-      <div className="lg:col-span-2 lg:sticky lg:top-6 lg:self-start">
+      <div className="lg:col-span-3 lg:sticky lg:top-6 lg:self-start">
         <Card className="border-border/60">
           <CardHeader>
             <CardTitle className="text-lg">Live preview</CardTitle>

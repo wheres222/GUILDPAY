@@ -48,7 +48,6 @@ export default async function SettingsPage({
     "use server"
 
     const serverId = String(formData.get("serverId") || "")
-    const cryptoPayoutAddress = String(formData.get("cryptoPayoutAddress") || "").trim()
     const webhookDeliveryUrl = String(formData.get("webhookDeliveryUrl") || "").trim()
     const webhookDeliverySecret = String(formData.get("webhookDeliverySecret") || "").trim()
 
@@ -62,7 +61,6 @@ export default async function SettingsPage({
         method: "POST",
         body: JSON.stringify({
           sellerId: ctx.sellerId,
-          cryptoPayoutAddress: cryptoPayoutAddress || undefined,
           webhookDeliveryUrl: webhookDeliveryUrl || undefined,
           webhookDeliverySecret: webhookDeliverySecret || undefined,
         }),
@@ -140,25 +138,14 @@ export default async function SettingsPage({
                 <Bell className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-lg font-bold" style={{ fontFamily: "var(--font-display)" }}>Delivery & Payout</CardTitle>
-                <CardDescription className="font-sans text-sm">These values are live and used by backend delivery/payout systems.</CardDescription>
+                <CardTitle className="text-lg font-bold" style={{ fontFamily: "var(--font-display)" }}>Webhook Delivery</CardTitle>
+                <CardDescription className="font-sans text-sm">These values are live and used by the backend delivery system.</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <form action={saveConnectionsAction} className="space-y-4">
               <input type="hidden" name="serverId" value={serverId} />
-
-              <div>
-                <label className="mb-1.5 block font-sans text-sm font-medium text-foreground">Crypto payout address</label>
-                <input
-                  type="text"
-                  name="cryptoPayoutAddress"
-                  defaultValue={profile?.cryptoPayoutAddress || ""}
-                  className="w-full rounded-lg border border-border/60 bg-card px-4 py-2.5 font-sans text-sm font-normal text-foreground"
-                  placeholder="Wallet address for seller payouts"
-                />
-              </div>
 
               <div>
                 <label className="mb-1.5 block font-sans text-sm font-medium text-foreground">Webhook delivery URL</label>

@@ -105,6 +105,40 @@ export async function cloneProductAction(args: {
   }
 }
 
+export async function editProductAction(args: {
+  serverId: string
+  productId: string
+  name: string
+  description?: string | null
+  imageUrl?: string | null
+  priceCents: number
+  deliveryType: string
+  deliveryValue?: string | null
+  isActive: boolean
+}) {
+  const ctx = await resolveDashboardContext(args.serverId)
+  if (!ctx.sellerId) return { ok: false, error: "missing_context" }
+  try {
+    await apiFetch(`/products/${args.productId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        sellerId: ctx.sellerId,
+        name: args.name,
+        description: args.description?.trim() || undefined,
+        imageUrl: args.imageUrl?.trim() || null,
+        priceCents: args.priceCents,
+        deliveryType: args.deliveryType,
+        deliveryValue: args.deliveryValue?.trim() || null,
+        isActive: args.isActive,
+      }),
+    })
+    revalidatePath(`/dashboard/${args.serverId}/products`)
+    return { ok: true }
+  } catch {
+    return { ok: false, error: "update_failed" }
+  }
+}
+
 /** "Delete" = deactivate (the backend has no hard-delete; this hides it). */
 export async function deleteProductAction(serverId: string, productId: string) {
   const ctx = await resolveDashboardContext(serverId)

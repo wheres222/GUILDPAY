@@ -2,13 +2,26 @@
 
 import { useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Search, LayoutGrid, List, Package, Copy, Trash2, Loader2 } from "lucide-react"
-import { cloneProductAction, deleteProductAction } from "./actions"
+import { Search, LayoutGrid, List, Package, Copy, Trash2, Loader2, Pencil } from "lucide-react"
+import { cloneProductAction, deleteProductAction, editProductAction } from "./actions"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
 
 export interface GridProduct {
   id: string
   name: string
   imageUrl?: string | null
+  description?: string | null
   isActive: boolean
   variants: Array<{
     priceCents: number
@@ -24,8 +37,144 @@ const DELIVERY_LABEL: Record<string, string> = {
   WEBHOOK: "Dynamic",
 }
 
+const DELIVERY_OPTIONS = [
+  { value: "LICENSE_KEY", label: "Serials" },
+  { value: "FILE_LINK", label: "File" },
+  { value: "WEBHOOK", label: "Dynamic" },
+]
+
+const fieldCls =
+  "w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
+
 function money(cents: number) {
   return `$${(cents / 100).toFixed(2)}`
+}
+
+function EditDialog({
+  serverId,
+  product,
+  onClose,
+}: {
+  serverId: string
+  product: GridProduct
+  onClose: () => void
+}) {
+  const router = useRouter()
+  const v = product.variants[0]
+  const [name, setName] = useState(product.name)
+  const [description, setDescription] = useState(product.description ?? "")
+  const [imageUrl, setImageUrl] = useState(product.imageUrl ?? "")
+  const [price, setPrice] = useState(((v?.priceCents ?? 0) / 100).toFixed(2))
+  const [deliveryType, setDeliveryType] = useState(v?.deliveryType ?? "LICENSE_KEY")
+  const [deliveryValue, setDeliveryValue] = useState(v?.deliveryValue ?? "")
+  const [isActive, setIsActive] = useState(product.isActive)
+  const [error, setError] = useState<string | null>(null)
+  const [saving, start] = useTransition()
+
+  const needsValue = deliveryType === "FILE_LINK" || deliveryType === "WEBHOOK"
+
+  const save = () => {
+    setError(null)
+    const cents = Math.round(parseFloat(price || "0") * 100)
+    if (name.trim().length < 2) return setError("Name must be at least 2 characters.")
+    if (!cents || cents <= 0) return setError("Enter a valid price.")
+    if (needsValue && !deliveryValue.trim()) return setError("A delivery value is required for File / Dynamic.")
+    start(async () => {
+      const res = await editProductAction({
+        serverId,
+        productId: product.id,
+        name: name.trim(),
+        description,
+        imageUrl,
+        priceCents: cents,
+        deliveryType,
+        deliveryValue,
+        isActive,
+      })
+      if (!res.ok) return setError("Could not save changes. Check the image URL is a valid link.")
+      onClose()
+      router.refresh()
+    })
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Edit product</DialogTitle>
+          <DialogDescription>Update the details for this product.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          {error && (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</div>
+          )}
+          <div>
+            <Label htmlFor="e-name">Name</Label>
+            <Input id="e-name" value={name} onChange={(e) => setName(e.target.value)} className="mt-1" />
+          </div>
+          <div>
+            <Label htmlFor="e-desc">Description</Label>
+            <textarea
+              id="e-desc"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              placeholder="Describe your product…"
+              className={cn(fieldCls, "mt-1")}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="e-price">Price (USD)</Label>
+              <Input id="e-price" type="number" step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <Label htmlFor="e-delivery">Delivery type</Label>
+              <select
+                id="e-delivery"
+                value={deliveryType}
+                onChange={(e) => setDeliveryType(e.target.value)}
+                className={cn(fieldCls, "mt-1")}
+              >
+                {DELIVERY_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {needsValue && (
+            <div>
+              <Label htmlFor="e-dval">{deliveryType === "WEBHOOK" ? "Webhook URL" : "File / download URL"}</Label>
+              <Input id="e-dval" value={deliveryValue} onChange={(e) => setDeliveryValue(e.target.value)} placeholder="https://…" className="mt-1" />
+            </div>
+          )}
+          <div>
+            <Label htmlFor="e-img">Image URL</Label>
+            <Input id="e-img" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://…/image.png" className="mt-1" />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <input
+              type="checkbox"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+              className="h-4 w-4 rounded border-border/60"
+            />
+            Visible in store (Public)
+          </label>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={save} disabled={saving} className="gap-2">
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />} Save changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 export function ProductsGrid({
@@ -40,6 +189,7 @@ export function ProductsGrid({
   const [view, setView] = useState<"grid" | "list">("grid")
   const [, startTransition] = useTransition()
   const [busy, setBusy] = useState<string | null>(null)
+  const [edit, setEdit] = useState<GridProduct | null>(null)
 
   const filtered = useMemo(
     () => products.filter((p) => p.name.toLowerCase().includes(query.toLowerCase())),
@@ -143,6 +293,13 @@ export function ProductsGrid({
                   {/* Actions */}
                   <div className="mt-3 flex items-center gap-4 border-t border-border/50 pt-3 text-xs font-medium">
                     <button
+                      onClick={() => setEdit(p)}
+                      className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Edit
+                    </button>
+                    <button
                       disabled={busy === p.id}
                       onClick={() =>
                         run(p.id, () =>
@@ -180,6 +337,8 @@ export function ProductsGrid({
           })}
         </div>
       )}
+
+      {edit && <EditDialog serverId={serverId} product={edit} onClose={() => setEdit(null)} />}
     </div>
   )
 }

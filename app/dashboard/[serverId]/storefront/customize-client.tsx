@@ -20,6 +20,8 @@ interface SampleProduct {
 const SAMPLE: SampleProduct[] = [
   { id: "p1", name: "Premium License Key", price: "$4.99", desc: "Lifetime activation key, delivered instantly via DM." },
   { id: "p2", name: "VIP Membership", price: "$9.99", desc: "Get the @VIP role with perks for a month." },
+  { id: "p3", name: "Pro Toolkit", price: "$24.99", desc: "Full toolkit download with weekly updates and support." },
+  { id: "p4", name: "Custom Build", price: "$199.00", desc: "Tell us what you need — we open a ticket and deliver." },
 ]
 
 // ── Shared Discord message chrome ──────────────────────────────────────────
@@ -66,7 +68,7 @@ function BuyButtons() {
 // ── Default style: classic embed (coloured left bar) ───────────────────────
 function DefaultPreview({ botName, logoUrl, bannerUrl }: { botName: string; logoUrl: string; bannerUrl: string }) {
   return (
-    <div className="rounded-lg bg-[#313338] p-4">
+    <div className="min-h-[600px] rounded-lg bg-[#313338] p-4">
       <div className="flex gap-3">
         <Avatar botName={botName} logoUrl={logoUrl} />
         <div className="min-w-0 flex-1">
@@ -110,7 +112,7 @@ function DefaultPreview({ botName, logoUrl, bannerUrl }: { botName: string; logo
 // ── V2 style: Components V2 container (no left bar, banner on top) ──────────
 function V2Preview({ botName, logoUrl, bannerUrl }: { botName: string; logoUrl: string; bannerUrl: string }) {
   return (
-    <div className="rounded-lg bg-[#313338] p-4">
+    <div className="min-h-[600px] rounded-lg bg-[#313338] p-4">
       <div className="flex gap-3">
         <Avatar botName={botName} logoUrl={logoUrl} />
         <div className="min-w-0 flex-1">

@@ -47,3 +47,39 @@ discordRouter.get("/discord/guild/:discordGuildId/bot-installed", async (req, re
     next(error);
   }
 });
+
+// Lists the guild's text/announcement channels so the dashboard can offer a
+// channel picker for posting product panels.
+discordRouter.get("/discord/guild/:discordGuildId/channels", async (req, res, next) => {
+  try {
+    const { discordGuildId } = paramsSchema.parse(req.params);
+
+    if (!env.DISCORD_TOKEN) {
+      return res.json({ success: true, channels: [] });
+    }
+
+    const response = await fetch(
+      `https://discord.com/api/v10/guilds/${discordGuildId}/channels`,
+      { headers: { Authorization: `Bot ${env.DISCORD_TOKEN}` } }
+    );
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      return res.status(response.status).json({
+        success: false,
+        message: `Discord API error (${response.status}) ${body.slice(0, 200)}`,
+        channels: []
+      });
+    }
+
+    const raw = (await response.json()) as Array<{ id: string; name: string; type: number; position: number }>;
+    const channels = raw
+      .filter((c) => c.type === 0 || c.type === 5) // GUILD_TEXT, GUILD_ANNOUNCEMENT
+      .sort((a, b) => a.position - b.position)
+      .map((c) => ({ id: c.id, name: c.name }));
+
+    return res.json({ success: true, channels });
+  } catch (error) {
+    next(error);
+  }
+});

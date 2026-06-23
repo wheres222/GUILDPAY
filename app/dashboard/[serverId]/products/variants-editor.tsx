@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   ChevronDown,
   ChevronUp,
@@ -112,7 +112,15 @@ const SELECTION: { id: Selection; title: string; desc: string }[] = [
   { id: "random", title: "Random", desc: "A random item will be delivered." },
 ]
 
-export function VariantsEditor({ deliverable, initialPrice = "" }: { deliverable: string; initialPrice?: string }) {
+export function VariantsEditor({
+  deliverable,
+  initialPrice = "",
+  onPrimaryPriceChange,
+}: {
+  deliverable: string
+  initialPrice?: string
+  onPrimaryPriceChange?: (price: string) => void
+}) {
   const [variants, setVariants] = useState<Variant[]>(() => [{ ...newVariant("Default"), price: initialPrice }])
   const [openId, setOpenId] = useState<string | null>(variants[0].id)
 
@@ -132,6 +140,10 @@ export function VariantsEditor({ deliverable, initialPrice = "" }: { deliverable
   // inputs that stay mounted even when the row is collapsed (the visible inputs
   // below unmount on collapse, which previously dropped the values on submit).
   const primary = variants[0]
+
+  useEffect(() => {
+    onPrimaryPriceChange?.(primary.price)
+  }, [primary.price, onPrimaryPriceChange])
 
   return (
     <div className="space-y-3">

@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import {
   FileText,
   CreditCard,
-  Settings,
+  Eye,
   Info,
   ImageIcon,
   KeyRound,
@@ -15,16 +15,17 @@ import {
   Box,
   Save,
   X,
-  Plus,
+  Hash,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createProductAction, updateProductAction } from "./actions"
 import { VariantsEditor } from "./variants-editor"
+import { DiscordMessage, type Embed, type ActionRow } from "@/components/discord-embed"
 
 const TABS = [
   { id: "general", label: "General", icon: FileText },
   { id: "pricing", label: "Pricing & Stock", icon: CreditCard },
-  { id: "custom", label: "Custom Fields", icon: Settings },
+  { id: "preview", label: "Preview", icon: Eye },
 ] as const
 
 const DELIVERABLES = [
@@ -48,14 +49,6 @@ function Section({ icon: Icon, title, children }: { icon: typeof FileText; title
         <h2 className="font-semibold text-foreground">{title}</h2>
       </div>
       <div className="space-y-5 p-5">{children}</div>
-    </div>
-  )
-}
-
-function Placeholder({ label }: { label: string }) {
-  return (
-    <div className="rounded-xl border border-dashed border-border/60 bg-card/30 px-5 py-16 text-center text-sm text-muted-foreground">
-      <strong className="text-foreground">{label}</strong> settings are coming soon.
     </div>
   )
 }
@@ -85,6 +78,46 @@ export function CreateProductForm({
   const isEdit = mode === "edit"
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("general")
   const [deliverable, setDeliverable] = useState(initial?.deliverable || "serials")
+
+  // Lifted so the Preview tab can render the panel live as you type.
+  const [name, setName] = useState(initial?.name ?? "")
+  const [description, setDescription] = useState(initial?.description ?? "")
+  const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? "")
+  const [price, setPrice] = useState(initial?.price ?? "")
+
+  // Channel picker (post the panel on create).
+  const [channels, setChannels] = useState<{ id: string; name: string }[]>([])
+  const [channelsLoading, setChannelsLoading] = useState(true)
+  const [channelId, setChannelId] = useState("")
+
+  useEffect(() => {
+    let active = true
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || ""
+    fetch(`${base}/discord/guild/${serverId}/channels`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { channels: [] }))
+      .then((d) => {
+        if (active) setChannels(d.channels || [])
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setChannelsLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [serverId])
+
+  const previewEmbed: Embed = {
+    title: name || "Your product name",
+    description: description || "Your product description will appear here.",
+    color: 0x1f8fef,
+    fields: [{ name: "Price", value: price ? `$${Number(price || 0).toFixed(2)}` : "$0.00", inline: true }],
+    image: imageUrl ? { url: imageUrl } : undefined,
+    footer: { text: "Powered by GuildPay" },
+  }
+  const previewButtons: ActionRow[] = [
+    { type: 1, components: [{ type: 2, style: 3, label: "Buy with Crypto", custom_id: "preview" }] },
+  ]
 
   return (
     <form action={isEdit ? updateProductAction : createProductAction} className="p-4 sm:p-6 lg:p-8">
@@ -154,19 +187,19 @@ export function CreateProductForm({
         <Section icon={FileText} title="General">
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-foreground">Name</label>
-            <input name="name" required placeholder="Product Name" defaultValue={initial?.name} className={inputCls} />
+            <input name="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Product Name" className={inputCls} />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-foreground">Description</label>
-            <textarea name="description" rows={5} placeholder="Describe your product…" defaultValue={initial?.description} className={inputCls} />
+            <textarea name="description" rows={5} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe your product…" className={inputCls} />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-foreground">Image</label>
             <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/60 bg-background/60 px-4 py-8 text-center">
               <ImageIcon className="h-7 w-7 text-muted-foreground/50" />
-              <p className="text-xs text-muted-foreground">Paste an image URL below</p>
+              <p className="text-xs text-muted-foreground">Paste an image or GIF URL below</p>
             </div>
-            <input name="imageUrl" placeholder="https://…/image.png" defaultValue={initial?.imageUrl} className={`${inputCls} mt-2`} />
+            <input name="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://…/image.png" className={`${inputCls} mt-2`} />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-foreground">Instructions</label>
@@ -222,33 +255,45 @@ export function CreateProductForm({
             )}
           </div>
         </Section>
-
-        {/* Description Tabs */}
-        <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card/40 px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-              <FileText className="h-4 w-4 text-foreground" />
-            </span>
-            <div>
-              <h2 className="font-semibold text-foreground">Description Tabs</h2>
-              <p className="text-xs text-muted-foreground">Add tabs for Features, Specifications, FAQ and more.</p>
-            </div>
-          </div>
-          <Button type="button" variant="outline" size="sm" className="gap-2" disabled>
-            <Plus className="h-4 w-4" /> Add Tab
-          </Button>
-        </div>
       </div>
 
       {/* Pricing & Stock */}
       <div className={tab === "pricing" ? "space-y-6" : "hidden"}>
         <Section icon={CreditCard} title="Pricing & Stock">
-          <VariantsEditor deliverable={deliverable} initialPrice={initial?.price} />
+          <VariantsEditor deliverable={deliverable} initialPrice={initial?.price} onPrimaryPriceChange={setPrice} />
         </Section>
       </div>
 
-      {/* Custom Fields */}
-      <div className={tab === "custom" ? "" : "hidden"}><Placeholder label="Custom Fields" /></div>
+      {/* Preview */}
+      <div className={tab === "preview" ? "space-y-6" : "hidden"}>
+        {!isEdit && (
+          <Section icon={Hash} title="Post to channel">
+            <p className="text-xs text-muted-foreground">
+              Choose where the buy panel is posted when you create this product. Leave as “Don’t post” to add it manually later.
+            </p>
+            <select name="channelId" value={channelId} onChange={(e) => setChannelId(e.target.value)} className={inputCls}>
+              <option value="">Don’t post automatically</option>
+              {channels.map((c) => (
+                <option key={c.id} value={c.id}>
+                  #{c.name}
+                </option>
+              ))}
+            </select>
+            {channelsLoading ? (
+              <p className="text-xs text-muted-foreground">Loading channels…</p>
+            ) : channels.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No channels found — make sure the bot is in this server.</p>
+            ) : null}
+          </Section>
+        )}
+
+        <Section icon={Eye} title="Live preview">
+          <p className="text-xs text-muted-foreground">This is how your product panel will look in Discord.</p>
+          <div className="overflow-x-auto rounded-lg">
+            <DiscordMessage botName="GuildPay" embeds={[previewEmbed]} components={previewButtons} />
+          </div>
+        </Section>
+      </div>
     </form>
   )
 }

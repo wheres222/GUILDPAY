@@ -26,6 +26,7 @@ export async function createProductAction(formData: FormData) {
   const deliverable = String(formData.get("deliverable") || "serials")
   const deliveryValue = String(formData.get("deliveryValue") || "").trim()
   const serials = String(formData.get("serials") || "")
+  const channelId = String(formData.get("channelId") || "").trim()
   const exitAfter = String(formData.get("exitAfter") || "") === "1"
 
   const ctx = await resolveDashboardContext(serverId)
@@ -64,6 +65,22 @@ export async function createProductAction(formData: FormData) {
           body: JSON.stringify({ sellerId: ctx.sellerId, productId: res.product.id, keys }),
         }).catch(() => {})
       }
+    }
+
+    // Optionally post the buy panel to the chosen channel.
+    if (channelId) {
+      await apiFetch("/discord/panels/create", {
+        method: "POST",
+        body: JSON.stringify({
+          discordGuildId: ctx.guildId,
+          channelId,
+          sellerDiscordUserId: ctx.session?.user?.id,
+          productId: res.product.id,
+          panelTitle: name,
+          panelDescription: description || undefined,
+          imageUrl: imageUrl || undefined,
+        }),
+      }).catch(() => {})
     }
     ok = true
   } catch {

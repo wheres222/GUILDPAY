@@ -35,7 +35,7 @@ export async function createNowPaymentInvoice(input: {
       order_id: input.orderId,
       order_description: input.description,
       ipn_callback_url: input.ipnCallbackUrl,
-      is_fixed_rate: true,
+      is_fixed_rate: false,
       is_fee_paid_by_user: false
     })
   });
@@ -107,7 +107,7 @@ export async function createNowPaymentCharge(input: {
       pay_currency: input.payCurrency,
       order_id: input.orderId,
       ipn_callback_url: input.ipnCallbackUrl,
-      is_fixed_rate: true,
+      is_fixed_rate: false,
       is_fee_paid_by_user: false
     })
   });

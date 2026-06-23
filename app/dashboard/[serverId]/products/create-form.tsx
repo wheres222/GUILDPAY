@@ -16,11 +16,13 @@ import {
   Save,
   X,
   Hash,
+  Send,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createProductAction, updateProductAction } from "./actions"
 import { VariantsEditor } from "./variants-editor"
 import { DiscordMessage, type Embed, type ActionRow } from "@/components/discord-embed"
+import { PostPanelDialog } from "./post-panel-dialog"
 
 const TABS = [
   { id: "general", label: "General", icon: FileText },
@@ -89,6 +91,7 @@ export function CreateProductForm({
   const [channels, setChannels] = useState<{ id: string; name: string }[]>([])
   const [channelsLoading, setChannelsLoading] = useState(true)
   const [channelId, setChannelId] = useState("")
+  const [showPost, setShowPost] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -120,6 +123,7 @@ export function CreateProductForm({
   ]
 
   return (
+    <>
     <form action={isEdit ? updateProductAction : createProductAction} className="p-4 sm:p-6 lg:p-8">
       <input type="hidden" name="serverId" value={serverId} />
       {isEdit && productId ? <input type="hidden" name="productId" value={productId} /> : null}
@@ -136,6 +140,11 @@ export function CreateProductForm({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {isEdit && productId ? (
+            <Button type="button" variant="outline" size="sm" className="gap-2" onClick={() => setShowPost(true)}>
+              <Send className="h-4 w-4" /> Post
+            </Button>
+          ) : null}
           <Button asChild variant="outline" size="sm" className="gap-2">
             <Link href={`/dashboard/${serverId}/products`}>
               <X className="h-4 w-4" /> Cancel
@@ -295,5 +304,15 @@ export function CreateProductForm({
         </Section>
       </div>
     </form>
+    {isEdit && productId && showPost ? (
+      <PostPanelDialog
+        serverId={serverId}
+        product={{ id: productId, name, description, imageUrl }}
+        channels={channels}
+        channelsLoading={channelsLoading}
+        onClose={() => setShowPost(false)}
+      />
+    ) : null}
+    </>
   )
 }

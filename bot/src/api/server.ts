@@ -18,6 +18,28 @@ export function createApiServer() {
 
   app.use("/api/webhooks/nowpayments", express.raw({ type: "application/json" }));
 
+  // CORS — the dashboard calls a few endpoints (e.g. channels list) from the
+  // browser, so allow our own web origins (localhost, *.guildpay.io, Vercel).
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (
+      origin &&
+      (/^http:\/\/localhost:\d+$/.test(origin) ||
+        /^https:\/\/([a-z0-9-]+\.)*guildpay\.io$/.test(origin) ||
+        /\.vercel\.app$/.test(origin))
+    ) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Vary", "Origin");
+      res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    }
+    if (req.method === "OPTIONS") {
+      res.sendStatus(204);
+      return;
+    }
+    next();
+  });
+
   app.use(express.json());
 
   app.use("/api", healthRouter);

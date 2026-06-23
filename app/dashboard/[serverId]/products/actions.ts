@@ -105,38 +105,64 @@ export async function cloneProductAction(args: {
   }
 }
 
-export async function editProductAction(args: {
-  serverId: string
-  productId: string
-  name: string
-  description?: string | null
-  imageUrl?: string | null
-  priceCents: number
-  deliveryType: string
-  deliveryValue?: string | null
-  isActive: boolean
-}) {
-  const ctx = await resolveDashboardContext(args.serverId)
-  if (!ctx.sellerId) return { ok: false, error: "missing_context" }
+export async function updateProductAction(formData: FormData) {
+  const serverId = String(formData.get("serverId") || "")
+  const productId = String(formData.get("productId") || "")
+  const name = String(formData.get("name") || "").trim()
+  const description = String(formData.get("description") || "").trim()
+  const imageUrl = String(formData.get("imageUrl") || "").trim()
+  const price = Number(formData.get("price") || 0)
+  const deliverable = String(formData.get("deliverable") || "serials")
+  const deliveryValue = String(formData.get("deliveryValue") || "").trim()
+  const serials = String(formData.get("serials") || "")
+  const exitAfter = String(formData.get("exitAfter") || "") === "1"
+
+  const ctx = await resolveDashboardContext(serverId)
+  if (!ctx.sellerId) {
+    redirect(`/dashboard/${serverId}/products?error=missing_context`)
+  }
+  if (!productId || !name || !price) {
+    redirect(`/dashboard/${serverId}/products/${productId}/edit?error=invalid_input`)
+  }
+
+  const deliveryType = DELIVERY_MAP[deliverable] || "LICENSE_KEY"
+
+  let ok = false
   try {
-    await apiFetch(`/products/${args.productId}`, {
+    await apiFetch(`/products/${productId}`, {
       method: "PATCH",
       body: JSON.stringify({
         sellerId: ctx.sellerId,
-        name: args.name,
-        description: args.description?.trim() || undefined,
-        imageUrl: args.imageUrl?.trim() || null,
-        priceCents: args.priceCents,
-        deliveryType: args.deliveryType,
-        deliveryValue: args.deliveryValue?.trim() || null,
-        isActive: args.isActive,
+        name,
+        description: description || undefined,
+        imageUrl: imageUrl || null,
+        priceCents: Math.round(price * 100),
+        deliveryType,
+        deliveryValue: deliveryValue || null,
       }),
     })
-    revalidatePath(`/dashboard/${args.serverId}/products`)
-    return { ok: true }
+
+    // Any serials typed in are appended to existing stock.
+    if (deliverable === "serials" && serials.trim()) {
+      const keys = serials
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+      if (keys.length) {
+        await apiFetch("/inventory/license-keys/bulk", {
+          method: "POST",
+          body: JSON.stringify({ sellerId: ctx.sellerId, productId, keys }),
+        }).catch(() => {})
+      }
+    }
+    ok = true
   } catch {
-    return { ok: false, error: "update_failed" }
+    ok = false
   }
+
+  if (!ok) redirect(`/dashboard/${serverId}/products/${productId}/edit?error=update_failed`)
+  revalidatePath(`/dashboard/${serverId}/products`)
+  redirect(`/dashboard/${serverId}/products${exitAfter ? "?product=updated" : "?product=updated"}`)
 }
 
 /** "Delete" = deactivate (the backend has no hard-delete; this hides it). */

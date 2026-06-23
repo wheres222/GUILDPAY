@@ -112,8 +112,8 @@ const SELECTION: { id: Selection; title: string; desc: string }[] = [
   { id: "random", title: "Random", desc: "A random item will be delivered." },
 ]
 
-export function VariantsEditor({ deliverable }: { deliverable: string }) {
-  const [variants, setVariants] = useState<Variant[]>(() => [newVariant("Default")])
+export function VariantsEditor({ deliverable, initialPrice = "" }: { deliverable: string; initialPrice?: string }) {
+  const [variants, setVariants] = useState<Variant[]>(() => [{ ...newVariant("Default"), price: initialPrice }])
   const [openId, setOpenId] = useState<string | null>(variants[0].id)
 
   const update = (id: string, patch: Partial<Variant>) =>

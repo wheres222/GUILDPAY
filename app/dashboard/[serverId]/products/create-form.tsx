@@ -18,7 +18,7 @@ import {
   Plus,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { createProductAction } from "./actions"
+import { createProductAction, updateProductAction } from "./actions"
 import { VariantsEditor } from "./variants-editor"
 
 const TABS = [
@@ -60,22 +60,47 @@ function Placeholder({ label }: { label: string }) {
   )
 }
 
-export function CreateProductForm({ serverId, error }: { serverId: string; error?: string }) {
+interface InitialProduct {
+  name?: string
+  description?: string
+  imageUrl?: string
+  deliverable?: string
+  price?: string
+  deliveryValue?: string
+}
+
+export function CreateProductForm({
+  serverId,
+  error,
+  mode = "create",
+  productId,
+  initial,
+}: {
+  serverId: string
+  error?: string
+  mode?: "create" | "edit"
+  productId?: string
+  initial?: InitialProduct
+}) {
+  const isEdit = mode === "edit"
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("general")
-  const [deliverable, setDeliverable] = useState("serials")
+  const [deliverable, setDeliverable] = useState(initial?.deliverable || "serials")
 
   return (
-    <form action={createProductAction} className="p-4 sm:p-6 lg:p-8">
+    <form action={isEdit ? updateProductAction : createProductAction} className="p-4 sm:p-6 lg:p-8">
       <input type="hidden" name="serverId" value={serverId} />
+      {isEdit && productId ? <input type="hidden" name="productId" value={productId} /> : null}
       <input type="hidden" name="deliverable" value={deliverable} />
 
       {/* Header */}
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
           <h1 className="text-xl font-bold text-foreground sm:text-2xl" style={{ fontFamily: "var(--font-display)" }}>
-            Create Product
+            {isEdit ? "Edit Product" : "Create Product"}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Fill in the details below to create a new product.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {isEdit ? "Update the details below and save your changes." : "Fill in the details below to create a new product."}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button asChild variant="outline" size="sm" className="gap-2">
@@ -84,17 +109,17 @@ export function CreateProductForm({ serverId, error }: { serverId: string; error
             </Link>
           </Button>
           <Button type="submit" name="exitAfter" value="1" variant="outline" size="sm" className="gap-2">
-            <Save className="h-4 w-4" /> Create &amp; Exit
+            <Save className="h-4 w-4" /> {isEdit ? "Save & Exit" : "Create & Exit"}
           </Button>
           <Button type="submit" size="sm" className="gap-2">
-            <Save className="h-4 w-4" /> Create
+            <Save className="h-4 w-4" /> {isEdit ? "Save changes" : "Create"}
           </Button>
         </div>
       </div>
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          Could not create the product ({error}). Check the name, price, and deliverable.
+          Could not {isEdit ? "save" : "create"} the product ({error}). Check the name, price, and deliverable.
         </div>
       )}
 
@@ -129,11 +154,11 @@ export function CreateProductForm({ serverId, error }: { serverId: string; error
         <Section icon={FileText} title="General">
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-foreground">Name</label>
-            <input name="name" required placeholder="Product Name" className={inputCls} />
+            <input name="name" required placeholder="Product Name" defaultValue={initial?.name} className={inputCls} />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-foreground">Description</label>
-            <textarea name="description" rows={5} placeholder="Describe your product…" className={inputCls} />
+            <textarea name="description" rows={5} placeholder="Describe your product…" defaultValue={initial?.description} className={inputCls} />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-foreground">Image</label>
@@ -141,7 +166,7 @@ export function CreateProductForm({ serverId, error }: { serverId: string; error
               <ImageIcon className="h-7 w-7 text-muted-foreground/50" />
               <p className="text-xs text-muted-foreground">Paste an image URL below</p>
             </div>
-            <input name="imageUrl" placeholder="https://…/image.png" className={`${inputCls} mt-2`} />
+            <input name="imageUrl" placeholder="https://…/image.png" defaultValue={initial?.imageUrl} className={`${inputCls} mt-2`} />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-foreground">Instructions</label>
@@ -190,10 +215,10 @@ export function CreateProductForm({ serverId, error }: { serverId: string; error
 
             {/* Conditional inputs per deliverable */}
             {deliverable === "dynamic" && (
-              <input name="deliveryValue" placeholder="Webhook URL (https://…)" className={`${inputCls} mt-3`} />
+              <input name="deliveryValue" placeholder="Webhook URL (https://…)" defaultValue={initial?.deliveryValue} className={`${inputCls} mt-3`} />
             )}
             {deliverable === "files" && (
-              <input name="deliveryValue" placeholder="File / download URL (https://…)" className={`${inputCls} mt-3`} />
+              <input name="deliveryValue" placeholder="File / download URL (https://…)" defaultValue={initial?.deliveryValue} className={`${inputCls} mt-3`} />
             )}
           </div>
         </Section>
@@ -218,7 +243,7 @@ export function CreateProductForm({ serverId, error }: { serverId: string; error
       {/* Pricing & Stock */}
       <div className={tab === "pricing" ? "space-y-6" : "hidden"}>
         <Section icon={CreditCard} title="Pricing & Stock">
-          <VariantsEditor deliverable={deliverable} />
+          <VariantsEditor deliverable={deliverable} initialPrice={initial?.price} />
         </Section>
       </div>
 

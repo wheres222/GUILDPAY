@@ -1,9 +1,103 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Search, LayoutGrid, List, Package, Copy, Trash2, Loader2, Pencil } from "lucide-react"
-import { cloneProductAction, deleteProductAction } from "./actions"
+import { Search, LayoutGrid, List, Package, Copy, Trash2, Loader2, Pencil, Send, Check } from "lucide-react"
+import { cloneProductAction, deleteProductAction, postProductPanelAction } from "./actions"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
+interface Channel {
+  id: string
+  name: string
+}
+
+function PostPanelDialog({
+  serverId,
+  product,
+  channels,
+  channelsLoading,
+  onClose,
+}: {
+  serverId: string
+  product: GridProduct
+  channels: Channel[]
+  channelsLoading: boolean
+  onClose: () => void
+}) {
+  const [channelId, setChannelId] = useState("")
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle")
+
+  const send = async () => {
+    if (!channelId) return
+    setState("sending")
+    const res = await postProductPanelAction({
+      serverId,
+      productId: product.id,
+      channelId,
+      name: product.name,
+      description: product.description,
+      imageUrl: product.imageUrl,
+    })
+    setState(res.ok ? "sent" : "error")
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Post “{product.name}” to a channel</DialogTitle>
+          <DialogDescription>The buy panel will be posted to the channel you pick.</DialogDescription>
+        </DialogHeader>
+        {state === "sent" ? (
+          <div className="flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-500">
+            <Check className="h-4 w-4" /> Panel posted.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <select
+              value={channelId}
+              onChange={(e) => setChannelId(e.target.value)}
+              className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+            >
+              <option value="">{channelsLoading ? "Loading channels…" : "Select a channel…"}</option>
+              {channels.map((c) => (
+                <option key={c.id} value={c.id}>
+                  #{c.name}
+                </option>
+              ))}
+            </select>
+            {state === "error" && (
+              <p className="text-sm text-red-400">Could not post the panel. Make sure the bot is in the server with access to that channel.</p>
+            )}
+          </div>
+        )}
+        <DialogFooter>
+          {state === "sent" ? (
+            <Button onClick={onClose}>Done</Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={onClose} disabled={state === "sending"}>
+                Cancel
+              </Button>
+              <Button onClick={send} disabled={!channelId || state === "sending"} className="gap-2">
+                {state === "sending" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Post panel
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 export interface GridProduct {
   id: string
@@ -41,6 +135,26 @@ export function ProductsGrid({
   const [view, setView] = useState<"grid" | "list">("grid")
   const [, startTransition] = useTransition()
   const [busy, setBusy] = useState<string | null>(null)
+  const [post, setPost] = useState<GridProduct | null>(null)
+  const [channels, setChannels] = useState<Channel[]>([])
+  const [channelsLoading, setChannelsLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || ""
+    fetch(`${base}/discord/guild/${serverId}/channels`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { channels: [] }))
+      .then((d) => {
+        if (active) setChannels(d.channels || [])
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setChannelsLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [serverId])
 
   const filtered = useMemo(
     () => products.filter((p) => p.name.toLowerCase().includes(query.toLowerCase())),
@@ -156,6 +270,16 @@ export function ProductsGrid({
                   {/* Actions */}
                   <div className="mt-3 flex items-center gap-4 border-t border-border/50 pt-3 text-xs font-medium">
                     <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setPost(p)
+                      }}
+                      className="inline-flex items-center gap-1 text-primary hover:text-primary/80"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      Post
+                    </button>
+                    <button
                       disabled={busy === p.id}
                       onClick={(e) => {
                         e.stopPropagation()
@@ -196,6 +320,16 @@ export function ProductsGrid({
             )
           })}
         </div>
+      )}
+
+      {post && (
+        <PostPanelDialog
+          serverId={serverId}
+          product={post}
+          channels={channels}
+          channelsLoading={channelsLoading}
+          onClose={() => setPost(null)}
+        />
       )}
     </div>
   )

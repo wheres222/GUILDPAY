@@ -182,6 +182,36 @@ export async function updateProductAction(formData: FormData) {
   redirect(`/dashboard/${serverId}/products${exitAfter ? "?product=updated" : "?product=updated"}`)
 }
 
+/** Post a product's buy panel to a Discord channel. */
+export async function postProductPanelAction(args: {
+  serverId: string
+  productId: string
+  channelId: string
+  name: string
+  description?: string | null
+  imageUrl?: string | null
+}) {
+  const ctx = await resolveDashboardContext(args.serverId)
+  if (!ctx.guildId || !ctx.sellerId) return { ok: false, error: "missing_context" }
+  try {
+    await apiFetch("/discord/panels/create", {
+      method: "POST",
+      body: JSON.stringify({
+        discordGuildId: ctx.guildId,
+        channelId: args.channelId,
+        sellerDiscordUserId: ctx.session?.user?.id,
+        productId: args.productId,
+        panelTitle: args.name,
+        panelDescription: args.description?.trim() || undefined,
+        imageUrl: args.imageUrl?.trim() || undefined,
+      }),
+    })
+    return { ok: true }
+  } catch {
+    return { ok: false, error: "post_failed" }
+  }
+}
+
 /** "Delete" = deactivate (the backend has no hard-delete; this hides it). */
 export async function deleteProductAction(serverId: string, productId: string) {
   const ctx = await resolveDashboardContext(serverId)

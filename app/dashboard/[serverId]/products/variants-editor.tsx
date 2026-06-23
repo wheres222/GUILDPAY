@@ -149,30 +149,51 @@ export function VariantsEditor({
     <div className="space-y-3">
       <input type="hidden" name="price" value={primary.price} />
       <input type="hidden" name="serials" value={primary.serials} />
+
+      {/* Toolbar — quick add on the top right */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-foreground">Variants</p>
+        <button
+          type="button"
+          onClick={add}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4" /> Add Variant
+        </button>
+      </div>
+
       {variants.map((v) => {
         const open = openId === v.id
         return (
           <div key={v.id} className="overflow-hidden rounded-lg border border-border/60">
-            {/* Row header */}
+            {/* Row header — the whole row toggles open/closed */}
             <div
-              className={`flex items-center gap-3 px-4 py-3 ${
+              role="button"
+              tabIndex={0}
+              onClick={() => setOpenId(open ? null : v.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault()
+                  setOpenId(open ? null : v.id)
+                }
+              }}
+              className={`flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/30 ${
                 open ? "border-b border-border/60 bg-primary/5" : ""
               }`}
             >
-              <button
-                type="button"
-                onClick={() => setOpenId(open ? null : v.id)}
-                className={open ? "text-primary" : "text-muted-foreground hover:text-foreground"}
-              >
+              <span className={open ? "text-primary" : "text-muted-foreground"}>
                 {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </button>
+              </span>
               <Menu className="h-4 w-4 cursor-grab text-muted-foreground" />
               <span className={open ? "font-semibold text-primary" : "font-medium text-foreground"}>
                 {v.name || "Untitled Variant"}
               </span>
               <button
                 type="button"
-                onClick={() => remove(v.id)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  remove(v.id)
+                }}
                 disabled={variants.length === 1}
                 className="ml-auto text-red-500 transition-colors hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
                 title={variants.length === 1 ? "A product needs at least one variant" : "Delete variant"}
@@ -415,15 +436,6 @@ export function VariantsEditor({
           </div>
         )
       })}
-
-      {/* Create a new variant */}
-      <button
-        type="button"
-        onClick={add}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border/60 py-4 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
-      >
-        <Plus className="h-4 w-4" /> Create a New Variant
-      </button>
     </div>
   )
 }

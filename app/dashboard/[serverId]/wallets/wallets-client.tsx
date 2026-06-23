@@ -42,6 +42,9 @@ const COINS: Coin[] = [
   { ticker: "LTC", name: "Litecoin", icon: "/crypto/ltc.png", pay: "ltc" },
   { ticker: "ETH", name: "Ethereum", icon: "/crypto/eth.png", pay: "eth" },
   { ticker: "SOL", name: "Solana", icon: "/crypto/sol.png", pay: "sol" },
+  { ticker: "USDT", name: "Tether", icon: "/crypto/usdt.png", pay: "usdttrc20" },
+  { ticker: "XMR", name: "Monero", icon: "/crypto/xmr.png", pay: "xmr" },
+  { ticker: "BNB", name: "BNB", icon: "/crypto/bnb.png", pay: "bnbbsc" },
 ]
 
 function money(cents: number) {
@@ -100,9 +103,7 @@ export function WalletsClient({
         {COINS.map((c) => (
           <div key={c.ticker} className="rounded-xl border border-border/60 bg-card p-4">
             <div className="mb-4 flex items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/50">
-                <Image src={c.icon} alt={c.name} width={28} height={28} className="h-7 w-7 object-contain" />
-              </span>
+              <Image src={c.icon} alt={c.name} width={40} height={40} className="h-10 w-10 shrink-0 object-contain" />
               <div>
                 <p className="text-sm font-semibold text-foreground">{c.name}</p>
                 <p className="text-xs text-muted-foreground">{c.ticker}</p>
@@ -140,9 +141,8 @@ export function WalletsClient({
             <thead>
               <tr className="border-b border-border/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Method</th>
-                <th className="px-5 py-3">Amount</th>
-                <th className="px-5 py-3">USD Value</th>
+                <th className="px-5 py-3">Coin</th>
+                <th className="px-5 py-3">Amount (USD)</th>
                 <th className="px-5 py-3">Recipient</th>
                 <th className="px-5 py-3">Transaction ID</th>
                 <th className="px-5 py-3">Date</th>
@@ -151,7 +151,7 @@ export function WalletsClient({
             <tbody>
               {payouts.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">
                     No withdrawals yet.
                   </td>
                 </tr>
@@ -165,7 +165,6 @@ export function WalletsClient({
                     </td>
                     <td className="px-5 py-3 font-medium uppercase text-foreground">{p.currency}</td>
                     <td className="px-5 py-3 text-foreground">{money(p.amountCents)}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{money(p.amountCents)}</td>
                     <td className="px-5 py-3">
                       <span className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
                         {shorten(p.walletAddress)} <CopyBtn value={p.walletAddress} />

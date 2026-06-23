@@ -1,4 +1,5 @@
-import { DollarSign, ShoppingCart, Users } from "lucide-react"
+import Link from "next/link"
+import { DollarSign, ShoppingCart, Users, CheckCircle2, Circle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RevenueOrdersChart } from "@/components/dashboard/revenue-orders-chart"
 import { apiFetch, formatUsd } from "@/lib/backend-api"
@@ -51,6 +52,24 @@ export default async function DashboardPage({ params }: { params: Promise<{ serv
     }
   }
 
+  // Setup checklist signals
+  let botInstalled = false
+  let nowReady = false
+  try {
+    const r = await apiFetch<{ installed: boolean }>(`/discord/guild/${serverId}/bot-installed`)
+    botInstalled = r.installed
+  } catch {}
+  try {
+    const h = await apiFetch<{ features?: { nowPaymentsEnabled?: boolean } }>(`/health`)
+    nowReady = Boolean(h.features?.nowPaymentsEnabled)
+  } catch {}
+  const setupItems = [
+    { done: botInstalled, label: "Add the bot to your server", href: "/select-server" },
+    { done: nowReady, label: "Crypto payments enabled", href: undefined as string | undefined },
+    { done: (summary?.productsCount ?? 0) > 0, label: "Create your first product", href: `/dashboard/${serverId}/products/new` },
+  ]
+  const setupComplete = setupItems.every((i) => i.done)
+
   const chartData = recentOrders
     .slice()
     .reverse()
@@ -74,6 +93,33 @@ export default async function DashboardPage({ params }: { params: Promise<{ serv
           {dataError}
         </div>
       ) : null}
+
+      {!setupComplete && (
+        <Card className="mb-6 border-primary/30 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-display)" }}>
+              Finish setting up
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {setupItems.map((i) => (
+              <div key={i.label} className="flex items-center gap-2 text-sm">
+                {i.done ? (
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                ) : (
+                  <Circle className="h-4 w-4 shrink-0 text-muted-foreground" />
+                )}
+                <span className={i.done ? "text-muted-foreground line-through" : "text-foreground"}>{i.label}</span>
+                {!i.done && i.href ? (
+                  <Link href={i.href} className="ml-auto text-xs font-medium text-primary hover:underline">
+                    Do it →
+                  </Link>
+                ) : null}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="border-border/60">

@@ -54,6 +54,20 @@ export default async function EditProductPage({
     redirect(`/dashboard/${serverId}/products?error=not_found`)
   }
 
+  // Current stock (available license keys) for this product, if any.
+  let existingStock: number | undefined
+  if (ctx.sellerId) {
+    try {
+      const inv = await apiFetch<{
+        products: Array<{ id: string; variants: Array<{ availableLicenseKeys: number | null }> }>
+      }>(`/inventory/seller/${ctx.sellerId}/summary`)
+      const match = inv.products.find((p) => p.id === productId)
+      if (match) {
+        existingStock = match.variants.reduce((sum, vr) => sum + (vr.availableLicenseKeys ?? 0), 0)
+      }
+    } catch {}
+  }
+
   const v = product.variants[0]
   const initial = {
     name: product.name,
@@ -65,6 +79,13 @@ export default async function EditProductPage({
   }
 
   return (
-    <CreateProductForm serverId={serverId} mode="edit" productId={productId} initial={initial} error={sp?.error} />
+    <CreateProductForm
+      serverId={serverId}
+      mode="edit"
+      productId={productId}
+      initial={initial}
+      existingStock={existingStock}
+      error={sp?.error}
+    />
   )
 }

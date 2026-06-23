@@ -70,12 +70,14 @@ export function CreateProductForm({
   mode = "create",
   productId,
   initial,
+  existingStock,
 }: {
   serverId: string
   error?: string
   mode?: "create" | "edit"
   productId?: string
   initial?: InitialProduct
+  existingStock?: number
 }) {
   const isEdit = mode === "edit"
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("general")
@@ -269,7 +271,7 @@ export function CreateProductForm({
       {/* Pricing & Stock */}
       <div className={tab === "pricing" ? "space-y-6" : "hidden"}>
         <Section icon={CreditCard} title="Pricing & Stock">
-          <VariantsEditor deliverable={deliverable} initialPrice={initial?.price} onPrimaryPriceChange={setPrice} />
+          <VariantsEditor deliverable={deliverable} initialPrice={initial?.price} existingStock={existingStock} onPrimaryPriceChange={setPrice} />
         </Section>
       </div>
 

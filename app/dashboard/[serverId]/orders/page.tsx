@@ -2,6 +2,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { apiFetch, formatUsd } from "@/lib/backend-api"
 import { resolveDashboardContext } from "@/lib/dashboard-context"
 
+/** Colour-coded order status: green = done, orange = pending, red = ended. */
+function statusBadge(status: string) {
+  const s = (status || "").toUpperCase()
+  if (s.includes("DELIVER") || s === "PAID" || s.includes("COMPLETE")) {
+    return { label: "Completed", cls: "border-green-500/30 bg-green-500/10 text-green-500" }
+  }
+  if (s.includes("PENDING")) {
+    return { label: "Pending", cls: "border-amber-500/30 bg-amber-500/10 text-amber-500" }
+  }
+  const label = status ? status.charAt(0) + status.slice(1).toLowerCase().replace(/_/g, " ") : "Unknown"
+  return { label, cls: "border-red-500/30 bg-red-500/10 text-red-500" }
+}
+
 type SellerOrdersResponse = {
   success: boolean
   orders: Array<{
@@ -66,16 +79,22 @@ export default async function OrdersPage({ params }: { params: Promise<{ serverI
                     <p className="font-mono text-xs text-primary">{order.id}</p>
                     <p className="text-sm font-medium text-foreground">{order.items?.[0]?.productName || "Order item"}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="flex items-center gap-3 sm:flex-col sm:items-end">
                     <p className="text-sm font-semibold text-foreground">{formatUsd(order.subtotalCents)}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleString()}</p>
+                    {(() => {
+                      const b = statusBadge(order.status)
+                      return (
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${b.cls}`}>
+                          {b.label}
+                        </span>
+                      )
+                    })()}
                   </div>
                 </div>
 
-                <div className="mt-2 grid gap-2 text-xs text-muted-foreground sm:grid-cols-4">
-                  <p>Status: <span className="font-medium text-foreground">{order.status}</span></p>
-                  <p>Method: <span className="font-medium text-foreground">{order.paymentMethod}</span></p>
-                  <p>Provider: <span className="font-medium text-foreground">{order.paymentProvider}</span></p>
+                <div className="mt-2 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+                  <p>{new Date(order.createdAt).toLocaleString()}</p>
+                  <p>Method: <span className="font-medium text-foreground">Crypto</span></p>
                   <p>Buyer: <span className="font-mono text-foreground">{order.buyerDiscordUserId}</span></p>
                 </div>
               </div>

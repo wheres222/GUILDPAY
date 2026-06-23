@@ -10,7 +10,7 @@ export default async function StorefrontPage({ params }: { params: Promise<{ ser
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-xl font-bold text-foreground sm:text-2xl" style={{ fontFamily: "var(--font-display)" }}>
-            Storefront
+            Customize
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Customize your store branding and preview how your bot&apos;s panels look in Discord.

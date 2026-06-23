@@ -38,10 +38,12 @@ function Field({ label, optional, children }: { label: string; optional?: boolea
 export function VariantsEditor({
   deliverable,
   initialPrice = "",
+  existingStock,
   onPrimaryPriceChange,
 }: {
   deliverable: string
   initialPrice?: string
+  existingStock?: number
   onPrimaryPriceChange?: (price: string) => void
 }) {
   const [variants, setVariants] = useState<Variant[]>(() => [{ ...newVariant("Default"), price: initialPrice }])
@@ -163,6 +165,11 @@ export function VariantsEditor({
                   <label className="mb-1 block text-sm font-semibold text-foreground">Stock</label>
                   {deliverable === "serials" ? (
                     <>
+                      {typeof existingStock === "number" && (
+                        <p className="mb-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">{existingStock}</span> currently in stock. New lines you add below are <span className="font-medium text-foreground">added on top</span> of existing stock.
+                        </p>
+                      )}
                       <p className="mb-2 text-xs text-muted-foreground">
                         Enter one deliverable per line. Each line is one unit of stock, delivered on purchase.
                       </p>

@@ -1,116 +1,39 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {
-  ChevronDown,
-  ChevronUp,
-  Menu,
-  Trash2,
-  Box,
-  Plus,
-  Minus,
-  Percent,
-  MessageCircle,
-  Undo2,
-  Redo2,
-  Bold,
-  Italic,
-  Underline,
-  Code2,
-  Link2,
-  Palette,
-  PaintBucket,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignJustify,
-} from "lucide-react"
+import { ChevronDown, ChevronUp, Menu, Trash2, Box, Plus } from "lucide-react"
 
 const inputCls =
   "w-full rounded-lg border border-border/60 bg-background px-3.5 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
-
-type Selection = "last" | "first" | "random"
 
 interface Variant {
   id: string
   name: string
   description: string
   price: string
-  slashedPrice: string
   serials: string
-  minQty: string
-  maxQty: string
-  selection: Selection
-  manageStock: boolean
 }
 
 let seq = 0
 function newVariant(name = ""): Variant {
   seq += 1
-  return {
-    id: `v${Date.now()}_${seq}`,
-    name,
-    description: "",
-    price: "",
-    slashedPrice: "",
-    serials: "",
-    minQty: "",
-    maxQty: "",
-    selection: "last",
-    manageStock: true,
-  }
+  return { id: `v${Date.now()}_${seq}`, name, description: "", price: "", serials: "" }
 }
 
 function stockCount(serials: string) {
   return serials.split(/\r?\n/).map((s) => s.trim()).filter(Boolean).length
 }
 
-function Field({
-  label,
-  optional,
-  hint,
-  children,
-}: {
-  label: string
-  optional?: boolean
-  hint?: string
-  children: React.ReactNode
-}) {
+function Field({ label, optional, children }: { label: string; optional?: boolean; children: React.ReactNode }) {
   return (
     <div>
       <label className="mb-1.5 block text-sm font-semibold text-foreground">
         {label} {optional && <span className="font-normal text-muted-foreground">(optional)</span>}
       </label>
-      {hint && <p className="mb-1.5 text-xs text-muted-foreground">{hint}</p>}
       {children}
     </div>
   )
 }
-
-/** Presentational rich-text toolbar (matches the SellAuth editor chrome). */
-function EditorToolbar() {
-  const tools = [Undo2, Redo2, Bold, Italic, Underline, Code2, Link2, Palette, PaintBucket, AlignLeft, AlignCenter, AlignRight, AlignJustify]
-  return (
-    <div className="flex flex-wrap items-center gap-1 rounded-t-lg border border-border/60 bg-muted/40 px-2 py-1.5">
-      {tools.map((T, i) => (
-        <button
-          key={i}
-          type="button"
-          disabled
-          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground"
-        >
-          <T className="h-3.5 w-3.5" />
-        </button>
-      ))}
-    </div>
-  )
-}
-
-const SELECTION: { id: Selection; title: string; desc: string }[] = [
-  { id: "last", title: "Last", desc: "The last item will be delivered first." },
-  { id: "first", title: "First", desc: "The first item will be delivered first." },
-  { id: "random", title: "Random", desc: "A random item will be delivered." },
-]
 
 export function VariantsEditor({
   deliverable,
@@ -136,9 +59,6 @@ export function VariantsEditor({
     setOpenId(v.id)
   }
 
-  // The first variant feeds the backend. Submit its price/serials via hidden
-  // inputs that stay mounted even when the row is collapsed (the visible inputs
-  // below unmount on collapse, which previously dropped the values on submit).
   const primary = variants[0]
 
   useEffect(() => {
@@ -147,6 +67,8 @@ export function VariantsEditor({
 
   return (
     <div className="space-y-3">
+      {/* Only the first variant feeds the backend; submit it via hidden inputs
+          that stay mounted even when the row is collapsed. */}
       <input type="hidden" name="price" value={primary.price} />
       <input type="hidden" name="serials" value={primary.serials} />
 
@@ -224,66 +146,39 @@ export function VariantsEditor({
                   />
                 </Field>
 
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <Field label="Price">
-                    <input
-                      value={v.price}
-                      onChange={(e) => update(v.id, { price: e.target.value })}
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.01"
-                      className={inputCls}
-                    />
-                  </Field>
-                  <Field label="Slashed Price" optional>
-                    <input
-                      value={v.slashedPrice}
-                      onChange={(e) => update(v.id, { slashedPrice: e.target.value })}
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="1.00"
-                      className={`${inputCls} line-through placeholder:line-through`}
-                    />
-                  </Field>
-                </div>
+                <Field label="Price (USD)">
+                  <input
+                    value={v.price}
+                    onChange={(e) => update(v.id, { price: e.target.value })}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="4.99"
+                    className={inputCls}
+                  />
+                </Field>
 
                 {/* Stock */}
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-foreground">Stock</label>
-                  <p className="mb-2 text-xs text-muted-foreground">
-                    Enter one deliverable per line. Upon purchase, the selected item is delivered to the customer.
-                  </p>
                   {deliverable === "serials" ? (
                     <>
-                      <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500">
-                            <Box className="h-4 w-4" />
-                          </span>
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{stockCount(v.serials)} items in stock</p>
-                            <p className="text-xs text-muted-foreground">Click to manage existing deliverables</p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => update(v.id, { manageStock: !v.manageStock })}
-                          className="flex items-center gap-2 rounded-lg border border-primary/50 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
-                        >
-                          <Box className="h-4 w-4" /> Manage Stock
-                        </button>
+                      <p className="mb-2 text-xs text-muted-foreground">
+                        Enter one deliverable per line. Each line is one unit of stock, delivered on purchase.
+                      </p>
+                      <div className="mb-2 inline-flex items-center gap-2 rounded-lg border border-border/60 bg-background px-3 py-1.5 text-xs">
+                        <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500/15 text-emerald-500">
+                          <Box className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="font-medium text-foreground">{stockCount(v.serials)} in stock</span>
                       </div>
-                      {v.manageStock && (
-                        <textarea
-                          value={v.serials}
-                          onChange={(e) => update(v.id, { serials: e.target.value })}
-                          rows={6}
-                          placeholder={"ABCD-1234-EFGH\nWXYZ-5678-IJKL"}
-                          className={`${inputCls} mt-2`}
-                        />
-                      )}
+                      <textarea
+                        value={v.serials}
+                        onChange={(e) => update(v.id, { serials: e.target.value })}
+                        rows={6}
+                        placeholder={"ABCD-1234-EFGH\nWXYZ-5678-IJKL"}
+                        className={inputCls}
+                      />
                     </>
                   ) : (
                     <div className="rounded-lg border border-border/60 bg-background px-4 py-3 text-sm text-muted-foreground">
@@ -291,146 +186,6 @@ export function VariantsEditor({
                     </div>
                   )}
                 </div>
-
-                {/* Downloadable files */}
-                <Field label="Downloadable Files" hint="Files that will be available for download after purchase.">
-                  <button
-                    type="button"
-                    disabled
-                    className="flex items-center gap-2 rounded-lg border border-dashed border-border/60 px-4 py-2.5 text-sm text-muted-foreground"
-                  >
-                    <Plus className="h-4 w-4" /> Attach downloadable files
-                  </button>
-                </Field>
-
-                {/* Quantities */}
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <Field label="Min Quantity" optional>
-                    <input
-                      value={v.minQty}
-                      onChange={(e) => update(v.id, { minQty: e.target.value })}
-                      type="number"
-                      min="0"
-                      placeholder="1"
-                      className={inputCls}
-                    />
-                  </Field>
-                  <Field label="Max Quantity" optional>
-                    <input
-                      value={v.maxQty}
-                      onChange={(e) => update(v.id, { maxQty: e.target.value })}
-                      type="number"
-                      min="0"
-                      placeholder="10"
-                      className={inputCls}
-                    />
-                  </Field>
-                </div>
-
-                {/* Volume discounts */}
-                <Field label="Volume Discounts" optional>
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <div className="relative flex-1">
-                      <input placeholder="Quantity…" className={`${inputCls} pr-12`} />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">pcs</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center rounded-lg border border-border/60 bg-background">
-                        <button type="button" disabled className="px-3 py-2.5 text-muted-foreground">
-                          <Minus className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="flex items-center px-2 text-sm text-muted-foreground">
-                          <Percent className="h-3.5 w-3.5" />
-                        </span>
-                        <button type="button" disabled className="px-3 py-2.5 text-muted-foreground">
-                          <Plus className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        disabled
-                        className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/50 text-primary"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <label className="mt-2 flex items-center gap-2 rounded-lg border border-border/60 bg-background px-4 py-3 text-sm text-foreground">
-                    <input type="checkbox" className="h-4 w-4 rounded border-border/60" />
-                    Disable Volume Discounts when a Coupon is applied
-                  </label>
-                </Field>
-
-                {/* Override instructions */}
-                <Field label="Override Instructions" optional hint="Override the default instructions for this variant.">
-                  <EditorToolbar />
-                  <textarea
-                    rows={4}
-                    placeholder="To use this product variant, follow these instructions…"
-                    className={`${inputCls} rounded-t-none`}
-                  />
-                </Field>
-
-                {/* Deliverable selection method */}
-                <Field
-                  label="Deliverable Selection Method"
-                  hint="Choose how will the system determine which deliverables to deliver to the customer."
-                >
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {SELECTION.map((s) => {
-                      const active = v.selection === s.id
-                      return (
-                        <button
-                          type="button"
-                          key={s.id}
-                          onClick={() => update(v.id, { selection: s.id })}
-                          className={`flex items-start gap-3 rounded-lg border px-4 py-3 text-left transition-colors ${
-                            active ? "border-primary bg-primary/5" : "border-border/60 hover:border-border"
-                          }`}
-                        >
-                          <span
-                            className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
-                              active ? "border-primary" : "border-muted-foreground/40"
-                            }`}
-                          >
-                            {active && <span className="h-2 w-2 rounded-full bg-primary" />}
-                          </span>
-                          <span>
-                            <span className="block text-sm font-medium text-foreground">{s.title}</span>
-                            <span className="mt-0.5 block text-xs text-muted-foreground">{s.desc}</span>
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </Field>
-
-                {/* Disabled payment methods */}
-                <Field label="Disabled Payment Methods" optional hint="Disable specific payment methods on this variant.">
-                  <button
-                    type="button"
-                    disabled
-                    className="flex w-full items-center justify-between rounded-lg border border-border/60 bg-background px-4 py-2.5 text-sm text-muted-foreground"
-                  >
-                    Disabled Payment Methods
-                    <ChevronDown className="h-4 w-4" />
-                  </button>
-                </Field>
-
-                {/* Discord auto join & role */}
-                <Field
-                  label="Discord Auto Join & Auto Role"
-                  optional
-                  hint="Configure the servers which users will be joined to and the roles which will be assigned to them."
-                >
-                  <button
-                    type="button"
-                    disabled
-                    className="flex items-center gap-2 rounded-lg border border-primary/50 px-4 py-2.5 text-sm font-medium text-primary"
-                  >
-                    <MessageCircle className="h-4 w-4" /> Configure Discord Servers &amp; Roles
-                  </button>
-                </Field>
               </div>
             )}
           </div>

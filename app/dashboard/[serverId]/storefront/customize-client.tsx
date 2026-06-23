@@ -3,7 +3,6 @@
 import { useState } from "react"
 import {
   Image as ImageIcon,
-  Palette,
   Bot,
   LayoutTemplate,
   Type,
@@ -365,26 +364,6 @@ export function CustomizeClient() {
               <div className="text-sm font-semibold text-foreground">Webhooks V2</div>
               <div className="mt-0.5 text-xs text-muted-foreground">Modern Components V2 container layout.</div>
             </button>
-          </CardContent>
-        </Card>
-
-        {/* Theme (still gated) */}
-        <Card className="border-border/60">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Palette className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-lg">Theme</CardTitle>
-                <CardDescription>Color editing will be enabled after storefront API contracts are finalized.</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button variant="outline" disabled className="w-full justify-start border-border/60">
-              Primary color editor (soon)
-            </Button>
           </CardContent>
         </Card>
       </div>

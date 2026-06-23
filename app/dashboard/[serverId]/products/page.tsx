@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Plus, ListOrdered, Code2, X } from "lucide-react"
+import { Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { apiFetch } from "@/lib/backend-api"
 import { resolveDashboardContext } from "@/lib/dashboard-context"
@@ -53,12 +53,6 @@ export default async function ProductsPage({
           <p className="mt-1 text-sm text-muted-foreground">Manage your product inventory.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <Code2 className="h-4 w-4" /> Embed Products
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2">
-            <ListOrdered className="h-4 w-4" /> Reorder
-          </Button>
           <Button asChild size="sm" className="gap-2">
             <Link href={`/dashboard/${serverId}/products/new`}>
               <Plus className="h-4 w-4" /> Create Product

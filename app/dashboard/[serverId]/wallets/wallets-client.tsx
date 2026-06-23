@@ -190,36 +190,6 @@ export function WalletsClient({
         </div>
       </div>
 
-      {/* Transaction History */}
-      <div className="rounded-xl border border-border/60 bg-card/40">
-        <div className="border-b border-border/60 px-5 py-4">
-          <h2 className="font-semibold text-foreground">Transaction History</h2>
-          <p className="text-xs text-muted-foreground">All incoming and outgoing on-chain transactions across your wallets.</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-sm">
-            <thead>
-              <tr className="border-b border-border/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="px-5 py-3">Type</th>
-                <th className="px-5 py-3">Currency</th>
-                <th className="px-5 py-3">Amount</th>
-                <th className="px-5 py-3">Transaction ID</th>
-                <th className="px-5 py-3">Confirmations</th>
-                <th className="px-5 py-3">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">
-                  No on-chain transactions yet.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div className="px-5 py-3 text-xs text-muted-foreground">Showing 0–0 of 0</div>
-      </div>
-
       {/* Withdraw dialog */}
       <Dialog open={coin !== null} onOpenChange={(o) => !o && setCoin(null)}>
         <DialogContent className="sm:max-w-md">

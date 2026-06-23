@@ -64,7 +64,8 @@ export default async function SelectServerPage({
   }
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-6xl px-4 py-10 lg:px-8">
+    <div className="force-light min-h-screen bg-background">
+      <div className="mx-auto w-full max-w-6xl px-4 py-10 lg:px-8">
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Select a server</h1>
@@ -145,6 +146,7 @@ export default async function SelectServerPage({
         <Link href="/" className="text-muted-foreground hover:text-foreground">
           Back to home
         </Link>
+      </div>
       </div>
     </div>
   )

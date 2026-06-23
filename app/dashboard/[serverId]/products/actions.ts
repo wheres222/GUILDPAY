@@ -27,6 +27,7 @@ export async function createProductAction(formData: FormData) {
   const deliveryValue = String(formData.get("deliveryValue") || "").trim()
   const serials = String(formData.get("serials") || "")
   const channelId = String(formData.get("channelId") || "").trim()
+  const acceptedCoins = String(formData.get("acceptedCoins") || "").trim()
   const exitAfter = String(formData.get("exitAfter") || "") === "1"
 
   const ctx = await resolveDashboardContext(serverId)
@@ -51,6 +52,7 @@ export async function createProductAction(formData: FormData) {
         priceCents: Math.round(price * 100),
         deliveryType,
         deliveryValue: deliveryValue || undefined,
+        acceptedCoins: acceptedCoins || undefined,
       }),
     })
 
@@ -132,6 +134,7 @@ export async function updateProductAction(formData: FormData) {
   const deliverable = String(formData.get("deliverable") || "serials")
   const deliveryValue = String(formData.get("deliveryValue") || "").trim()
   const serials = String(formData.get("serials") || "")
+  const acceptedCoins = String(formData.get("acceptedCoins") || "").trim()
   const exitAfter = String(formData.get("exitAfter") || "") === "1"
 
   const ctx = await resolveDashboardContext(serverId)
@@ -156,6 +159,7 @@ export async function updateProductAction(formData: FormData) {
         priceCents: Math.round(price * 100),
         deliveryType,
         deliveryValue: deliveryValue || null,
+        acceptedCoins: acceptedCoins || null,
       }),
     })
 

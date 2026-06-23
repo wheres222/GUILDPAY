@@ -12,6 +12,7 @@ type ProductsResponse = {
     name: string
     imageUrl?: string | null
     description?: string | null
+    acceptedCoins?: string | null
     variants: Array<{
       priceCents: number
       currency: string
@@ -76,6 +77,9 @@ export default async function EditProductPage({
     deliverable: DELIVERABLE_FROM_TYPE[v?.deliveryType ?? "LICENSE_KEY"] ?? "serials",
     price: ((v?.priceCents ?? 0) / 100).toFixed(2),
     deliveryValue: v?.deliveryValue ?? "",
+    acceptedCoins: product.acceptedCoins
+      ? product.acceptedCoins.split(",").map((s) => s.trim()).filter(Boolean)
+      : undefined,
   }
 
   return (

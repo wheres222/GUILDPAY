@@ -77,6 +77,7 @@ export async function createProductForSeller(input: {
   currency?: string;
   deliveryType: "LICENSE_KEY" | "FILE_LINK" | "WEBHOOK";
   deliveryValue?: string;
+  acceptedCoins?: string;
 }) {
   const baseSlug = slugify(input.name);
   let slug = baseSlug || `product-${Date.now()}`;
@@ -101,6 +102,7 @@ export async function createProductForSeller(input: {
       slug,
       description: input.description,
       imageUrl: input.imageUrl,
+      acceptedCoins: input.acceptedCoins,
       variants: {
         create: {
           name: "Default",
@@ -127,6 +129,7 @@ export async function updateProductForSeller(input: {
   priceCents?: number;
   deliveryType?: "LICENSE_KEY" | "FILE_LINK" | "WEBHOOK";
   deliveryValue?: string | null;
+  acceptedCoins?: string | null;
 }) {
   const product = await prisma.product.findFirst({
     where: { id: input.productId, sellerId: input.sellerId },
@@ -150,7 +153,8 @@ export async function updateProductForSeller(input: {
         name: input.name,
         description: input.description,
         imageUrl: input.imageUrl,
-        isActive: input.isActive
+        isActive: input.isActive,
+        acceptedCoins: input.acceptedCoins
       }
     });
 

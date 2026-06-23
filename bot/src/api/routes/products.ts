@@ -19,7 +19,8 @@ const createProductSchema = z.object({
   priceCents: z.number().int().positive(),
   currency: z.string().default("usd"),
   deliveryType: z.nativeEnum(DeliveryType),
-  deliveryValue: z.string().optional()
+  deliveryValue: z.string().optional(),
+  acceptedCoins: z.string().max(200).optional()
 }).superRefine((data, ctx) => {
   if ((data.deliveryType === DeliveryType.FILE_LINK || data.deliveryType === DeliveryType.WEBHOOK) && !data.deliveryValue) {
     ctx.addIssue({
@@ -38,7 +39,8 @@ const updateProductSchema = z.object({
   isActive: z.boolean().optional(),
   priceCents: z.number().int().positive().optional(),
   deliveryType: z.nativeEnum(DeliveryType).optional(),
-  deliveryValue: z.string().nullable().optional()
+  deliveryValue: z.string().nullable().optional(),
+  acceptedCoins: z.string().max(200).nullable().optional()
 });
 
 productsRouter.post("/products", async (req, res, next) => {
@@ -63,7 +65,8 @@ productsRouter.patch("/products/:productId", async (req, res, next) => {
       isActive: input.isActive,
       priceCents: input.priceCents,
       deliveryType: input.deliveryType,
-      deliveryValue: input.deliveryValue
+      deliveryValue: input.deliveryValue,
+      acceptedCoins: input.acceptedCoins
     });
 
     res.json({ success: true, product });

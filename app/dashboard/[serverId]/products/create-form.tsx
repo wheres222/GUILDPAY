@@ -17,10 +17,12 @@ import {
   X,
   Hash,
   Send,
+  Coins,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createProductAction, updateProductAction } from "./actions"
 import { VariantsEditor } from "./variants-editor"
+import { AcceptedCoins } from "./accepted-coins"
 import { DiscordMessage, type Embed, type ActionRow } from "@/components/discord-embed"
 import { PostPanelDialog } from "./post-panel-dialog"
 
@@ -62,6 +64,7 @@ interface InitialProduct {
   deliverable?: string
   price?: string
   deliveryValue?: string
+  acceptedCoins?: string[]
 }
 
 export function CreateProductForm({
@@ -272,6 +275,9 @@ export function CreateProductForm({
       <div className={tab === "pricing" ? "space-y-6" : "hidden"}>
         <Section icon={CreditCard} title="Pricing & Stock">
           <VariantsEditor deliverable={deliverable} initialPrice={initial?.price} existingStock={existingStock} onPrimaryPriceChange={setPrice} />
+        </Section>
+        <Section icon={Coins} title="Accepted cryptocurrencies">
+          <AcceptedCoins price={price} initial={initial?.acceptedCoins} />
         </Section>
       </div>
 

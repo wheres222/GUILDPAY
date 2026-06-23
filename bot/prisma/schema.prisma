@@ -101,6 +101,7 @@ model Product {
   slug          String
   description   String?
   imageUrl      String?
+  acceptedCoins String?
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

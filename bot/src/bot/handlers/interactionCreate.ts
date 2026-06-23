@@ -90,8 +90,20 @@ async function createCryptoOrder(input: {
 }
 
 /** Step 1 of crypto checkout: ephemeral emoji-only coin picker (button grid). */
-function coinSelectPanel(orderId: string, productName: string, subtotalCents: number, currency: string) {
-  const buttons: PanelButton[] = COIN_OPTIONS.map((c) => ({
+function coinSelectPanel(
+  orderId: string,
+  productName: string,
+  subtotalCents: number,
+  currency: string,
+  acceptedCoins?: string | null
+) {
+  const allowed = (acceptedCoins || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const coins = allowed.length ? COIN_OPTIONS.filter((c) => allowed.includes(c.value)) : COIN_OPTIONS;
+
+  const buttons: PanelButton[] = (coins.length ? coins : COIN_OPTIONS).map((c) => ({
     emoji: c.emoji,
     style: "secondary",
     customId: `paycoin:${orderId}:${c.value}`
@@ -139,7 +151,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       buyerDiscordUserId: interaction.user.id
     });
     await interaction.editReply(
-      coinSelectPanel(order.id, product.name, order.subtotalCents, order.currency)
+      coinSelectPanel(order.id, product.name, order.subtotalCents, order.currency, product.acceptedCoins)
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create checkout.";
@@ -486,7 +498,7 @@ export async function handleInteraction(interaction: ChatInputCommandInteraction
     });
 
     await interaction.editReply(
-      coinSelectPanel(order.id, product.name, order.subtotalCents, order.currency)
+      coinSelectPanel(order.id, product.name, order.subtotalCents, order.currency, product.acceptedCoins)
     );
     return;
   }

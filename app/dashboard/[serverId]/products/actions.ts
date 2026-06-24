@@ -74,7 +74,7 @@ export async function createProductAction(formData: FormData) {
       await apiFetch("/discord/panels/create", {
         method: "POST",
         body: JSON.stringify({
-          discordGuildId: ctx.guildId,
+          discordGuildId: serverId,
           channelId,
           sellerDiscordUserId: ctx.session?.user?.id,
           productId: res.product.id,
@@ -201,7 +201,7 @@ export async function postProductPanelAction(args: {
     await apiFetch("/discord/panels/create", {
       method: "POST",
       body: JSON.stringify({
-        discordGuildId: ctx.guildId,
+        discordGuildId: args.serverId,
         channelId: args.channelId,
         sellerDiscordUserId: ctx.session?.user?.id,
         productId: args.productId,

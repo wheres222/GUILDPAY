@@ -30,7 +30,7 @@ export function LandingHero() {
         <Link href="/" className="text-xl font-bold tracking-tight text-white">
           Guild Pay
         </Link>
-        <div className="flex items-center gap-6 text-sm font-medium text-white/90">
+        <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-6 text-sm font-medium text-white/90">
           <Link href="/features" className="hidden transition-colors hover:text-white sm:block">
             Features
           </Link>

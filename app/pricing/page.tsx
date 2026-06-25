@@ -1,7 +1,8 @@
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { Check } from "lucide-react"
+import { Footer } from "@/components/footer"
+import { SiteHeader } from "@/components/site-header"
+import { Button } from "@/components/ui/button"
 
 const plans = [
   {
@@ -9,13 +10,7 @@ const plans = [
     description: "Perfect for small communities getting started",
     price: "Free",
     priceNote: "Forever free",
-    features: [
-      "Up to 50 products",
-      "Basic analytics",
-      "Manual delivery",
-      "Community support",
-      "Standard transactions",
-    ],
+    features: ["Up to 50 products", "Basic analytics", "Manual delivery", "Community support", "Standard transactions"],
     cta: "Get Started",
     highlighted: false,
   },
@@ -56,121 +51,74 @@ const plans = [
   },
 ]
 
+const faqs = [
+  { title: "Free forever", body: "Our Starter plan is completely free with no hidden costs. Perfect for testing the waters." },
+  { title: "No credit card required", body: "Start your free trial without entering payment information. Upgrade when ready." },
+  { title: "Cancel anytime", body: "No long-term contracts. Cancel your subscription whenever you want, no questions asked." },
+]
+
 export default function PricingPage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="flex-1">
-        <section className="relative overflow-hidden py-20 lg:py-28">
-          {/* Background gradient */}
-          <div className="pointer-events-none absolute inset-0 -z-10">
-            <div className="absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-primary/20 via-accent/10 to-transparent blur-3xl" />
-          </div>
+    <div className="min-h-screen bg-white text-slate-900">
+      <SiteHeader
+        eyebrow="Pricing"
+        title="Simple, transparent pricing"
+        subtitle="Choose the plan that fits your needs. Upgrade or downgrade anytime."
+      />
 
-          <div className="mx-auto max-w-7xl px-4 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <span className="text-sm font-medium text-primary">Pricing</span>
-              <h1 className="mt-2 text-balance font-mono text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-                Simple, Transparent Pricing
-              </h1>
-              <p className="mt-4 text-pretty text-lg leading-relaxed text-muted-foreground">
-                Choose the plan that fits your needs. Upgrade or downgrade anytime.
-              </p>
-            </div>
-
-            <div className="mt-16 grid gap-8 lg:grid-cols-3">
-              {plans.map((plan, index) => (
-                <div
-                  key={index}
-                  className={`relative flex flex-col rounded-2xl border p-8 ${
-                    plan.highlighted
-                      ? "border-primary/50 bg-gradient-to-b from-primary/5 to-transparent shadow-lg shadow-primary/10"
-                      : "border-border/40 bg-card/50"
-                  }`}
-                >
-                  {plan.highlighted && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="rounded-full bg-primary px-4 py-1 text-xs font-medium text-primary-foreground">
-                        Most Popular
-                      </span>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <h3 className="font-mono text-xl font-semibold text-foreground">
-                      {plan.name}
-                    </h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {plan.description}
-                    </p>
-                  </div>
-
-                  <div className="mt-6">
-                    <span className="font-mono text-4xl font-bold text-foreground">
-                      {plan.price}
-                    </span>
-                    <span className="ml-2 text-sm text-muted-foreground">
-                      {plan.priceNote}
-                    </span>
-                  </div>
-
-                  <ul className="mt-8 flex-1 space-y-4">
-                    {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-start gap-3">
-                        <Check className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                        <span className="text-sm text-muted-foreground">
-                          {feature}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Button
-                    className={`mt-8 w-full ${
-                      plan.highlighted
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                        : ""
-                    }`}
-                    variant={plan.highlighted ? "default" : "outline"}
-                  >
-                    {plan.cta}
-                  </Button>
+      <main className="mx-auto -mt-16 max-w-7xl px-4 pb-24 sm:-mt-20 lg:px-8">
+        <div className="grid gap-6 lg:grid-cols-3">
+          {plans.map((plan) => (
+            <div
+              key={plan.name}
+              className={`relative flex flex-col rounded-2xl border bg-white p-8 ${
+                plan.highlighted ? "border-primary shadow-xl ring-1 ring-primary/20" : "border-slate-200 shadow-sm"
+              }`}
+            >
+              {plan.highlighted ? (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="rounded-full bg-primary px-4 py-1 text-xs font-semibold text-primary-foreground">
+                    Most popular
+                  </span>
                 </div>
-              ))}
-            </div>
+              ) : null}
 
-            {/* FAQ or additional info */}
-            <div className="mt-20 rounded-2xl border border-border/40 bg-card/30 p-8">
-              <div className="grid gap-8 md:grid-cols-3">
-                <div>
-                  <h4 className="font-mono font-semibold text-foreground">
-                    Free forever
-                  </h4>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Our Starter plan is completely free with no hidden costs. Perfect for testing the waters.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-mono font-semibold text-foreground">
-                    No credit card required
-                  </h4>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Start your free trial without entering payment information. Upgrade when ready.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-mono font-semibold text-foreground">
-                    Cancel anytime
-                  </h4>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    No long-term contracts. Cancel your subscription whenever you want, no questions asked.
-                  </p>
-                </div>
+              <h3 className="text-xl font-bold text-slate-900" style={{ fontFamily: "var(--font-display)" }}>
+                {plan.name}
+              </h3>
+              <p className="mt-2 text-sm text-slate-500">{plan.description}</p>
+
+              <div className="mt-6">
+                <span className="text-4xl font-extrabold text-slate-900">{plan.price}</span>
+                <span className="ml-2 text-sm text-slate-500">{plan.priceNote}</span>
               </div>
+
+              <ul className="mt-8 flex-1 space-y-3">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-3">
+                    <Check className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                    <span className="text-sm text-slate-600">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Button asChild className="mt-8 w-full" variant={plan.highlighted ? "default" : "outline"}>
+                <Link href="/signin">{plan.cta}</Link>
+              </Button>
             </div>
-          </div>
-        </section>
+          ))}
+        </div>
+
+        <div className="mt-16 grid gap-8 rounded-2xl border border-slate-200 bg-slate-50 p-8 md:grid-cols-3">
+          {faqs.map((f) => (
+            <div key={f.title}>
+              <h4 className="font-semibold text-slate-900">{f.title}</h4>
+              <p className="mt-2 text-sm text-slate-500">{f.body}</p>
+            </div>
+          ))}
+        </div>
       </main>
+
       <Footer />
     </div>
   )

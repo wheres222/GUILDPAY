@@ -30,17 +30,20 @@ export function LandingHero() {
         <Link href="/" className="text-xl font-bold tracking-tight text-white">
           Guild Pay
         </Link>
-        <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-6 text-sm font-medium text-white/90">
-          <Link href="/features" className="hidden transition-colors hover:text-white sm:block">
+        <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-8 text-sm font-medium text-white/90 sm:flex">
+          <Link href="/features" className="transition-colors hover:text-white">
             Features
           </Link>
-          <Link href="/pricing" className="hidden transition-colors hover:text-white sm:block">
+          <Link href="/pricing" className="transition-colors hover:text-white">
             Pricing
           </Link>
-          <Link href="/signin" className="transition-colors hover:text-white">
-            Sign In
-          </Link>
         </div>
+        <Link
+          href="/signin"
+          className="rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/25"
+        >
+          Sign In
+        </Link>
       </nav>
 
       {/* Hero copy */}

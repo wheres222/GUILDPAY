@@ -2,22 +2,6 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { DiscordIcon } from "@/components/discord-icon"
 
-/** A single fluffy cloud (flat base + rounded puffs), drawn from ellipses. */
-function Cloud({ cx, cy, s = 1, o = 1 }: { cx: number; cy: number; s?: number; o?: number }) {
-  const E = (dx: number, dy: number, rx: number, ry: number) => (
-    <ellipse cx={cx + dx * s} cy={cy + dy * s} rx={rx * s} ry={ry * s} />
-  )
-  return (
-    <g opacity={o}>
-      {E(0, 12, 180, 48)}
-      {E(-100, -6, 58, 50)}
-      {E(-34, -42, 76, 66)}
-      {E(48, -48, 82, 72)}
-      {E(120, -10, 64, 54)}
-    </g>
-  )
-}
-
 /**
  * AstroNote-style hero: vibrant purple sky with soft clouds along the bottom
  * that fade into the white body below, an elegant serif-italic accent line, and
@@ -38,35 +22,8 @@ export function LandingHero() {
           backgroundRepeat: "no-repeat",
         }}
       />
-      {/* Clouds */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <svg
-          className="absolute inset-x-0 bottom-0 h-[72%] w-full"
-          viewBox="0 0 1440 620"
-          preserveAspectRatio="xMidYMax slice"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <filter id="cloudBlur" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="6" />
-            </filter>
-          </defs>
-          <g fill="#ffffff" filter="url(#cloudBlur)">
-            {/* faint high wisps */}
-            <Cloud cx={360} cy={300} s={0.7} o={0.3} />
-            <Cloud cx={1080} cy={320} s={0.75} o={0.3} />
-            {/* mid clouds at the sides */}
-            <Cloud cx={170} cy={430} s={1.05} o={0.7} />
-            <Cloud cx={1270} cy={420} s={1.1} o={0.7} />
-            {/* dense low band that merges into the white body */}
-            <Cloud cx={520} cy={545} s={1.2} o={0.95} />
-            <Cloud cx={980} cy={555} s={1.25} o={0.95} />
-            <Cloud cx={120} cy={565} s={1.3} o={1} />
-            <Cloud cx={1340} cy={560} s={1.3} o={1} />
-          </g>
-        </svg>
-        <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent to-white" />
-      </div>
+      {/* Fade into the white body below */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-b from-transparent to-white" />
 
       {/* Top nav */}
       <nav className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-10">

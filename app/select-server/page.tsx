@@ -64,7 +64,7 @@ export default async function SelectServerPage({
   }
 
   return (
-    <div className="force-light min-h-screen bg-background">
+    <div className="force-light mesh-blue min-h-screen">
       <div className="mx-auto w-full max-w-6xl px-4 py-10 lg:px-8">
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>

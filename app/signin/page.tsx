@@ -15,14 +15,7 @@ export default async function SignInPage({
   const oauthConfigured = isDiscordOAuthConfigured()
   const readiness = await computeReadiness()
   return (
-    <div className="force-light flex min-h-screen flex-col items-center justify-center bg-background">
-      {/* Gradient background */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
-        <div className="absolute right-0 top-0 h-[500px] w-[500px] rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute bottom-0 left-0 h-[400px] w-[400px] rounded-full bg-accent/5 blur-3xl" />
-      </div>
-
+    <div className="force-light mesh-blue flex min-h-screen flex-col items-center justify-center">
       <div className="mx-auto w-full max-w-md px-4">
         <div className="mb-8 text-center">
           {/* Logo placeholder */}

@@ -114,6 +114,18 @@
   --sidebar-ring: oklch(0.62 0.19 252);
 }
 
+/* Soft organic blue mesh background (layered radial blobs, not a linear
+   gradient). Reusable on full-page backdrops like the auth pages. */
+.mesh-blue {
+  background-color: #aed6ff;
+  background-image:
+    radial-gradient(42% 42% at 18% 18%, #ffffff 0%, rgba(255, 255, 255, 0) 60%),
+    radial-gradient(40% 38% at 83% 12%, #d7edff 0%, rgba(215, 237, 255, 0) 60%),
+    radial-gradient(55% 55% at 4% 86%, #3f97ff 0%, rgba(63, 151, 255, 0) 55%),
+    radial-gradient(50% 50% at 98% 70%, #5aabff 0%, rgba(90, 171, 255, 0) 55%),
+    radial-gradient(45% 40% at 50% 55%, #9ccdff 0%, rgba(156, 205, 255, 0) 70%);
+}
+
 @theme inline {
   --font-sans: var(--font-inter), 'Inter', system-ui, sans-serif;
   --font-display: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;

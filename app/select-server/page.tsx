@@ -64,7 +64,16 @@ export default async function SelectServerPage({
   }
 
   return (
-    <div className="force-light hero-bg min-h-screen">
+    <div className="force-light relative min-h-screen overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          backgroundImage: "url('/hero.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
       <div className="mx-auto w-full max-w-6xl px-4 py-10 lg:px-8">
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>

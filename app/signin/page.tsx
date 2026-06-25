@@ -15,7 +15,16 @@ export default async function SignInPage({
   const oauthConfigured = isDiscordOAuthConfigured()
   const readiness = await computeReadiness()
   return (
-    <div className="force-light hero-bg flex min-h-screen flex-col items-center justify-center">
+    <div className="force-light relative flex min-h-screen flex-col items-center justify-center overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          backgroundImage: "url('/hero.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
       <div className="mx-auto w-full max-w-md px-4">
         <div className="mb-8 text-center">
           {/* Logo placeholder */}

@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-import { DiscordIcon } from "@/components/discord-icon"
 
 /**
  * AstroNote-style hero: vibrant purple sky with soft clouds along the bottom
@@ -76,56 +75,18 @@ export function LandingHero() {
         </div>
       </div>
 
-      {/* Product mockup card overlapping the seam into white */}
-      <div className="relative mx-auto mt-16 max-w-5xl px-6 pb-0">
+      {/* Product demo video overlapping the seam into white */}
+      <div className="relative mx-auto mt-16 max-w-3xl px-6 pb-0">
         <div className="-mb-24 overflow-hidden rounded-2xl border border-black/5 bg-white shadow-2xl shadow-sky-950/20 sm:-mb-28">
-          {/* Mock app top bar */}
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-              <DiscordIcon className="h-4 w-4 text-[#5865F2]" />
-              Guild Pay
-            </div>
-            <div className="hidden items-center gap-5 text-xs font-medium text-slate-500 sm:flex">
-              <span className="text-slate-900">Dashboard</span>
-              <span>Products</span>
-              <span>Orders</span>
-              <span>Wallets</span>
-              <span>Settings</span>
-            </div>
-          </div>
-
-          {/* Mock body */}
-          <div className="p-6">
-            <div className="mb-5 flex flex-wrap items-center gap-2">
-              {["1. Product", "2. Pricing", "3. Delivery", "4. Publish"].map((s, i) => (
-                <span
-                  key={s}
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    i === 0 ? "bg-[#1f8fef] text-white" : "bg-slate-100 text-slate-500"
-                  }`}
-                >
-                  {s}
-                </span>
-              ))}
-            </div>
-            <h3 className="text-lg font-bold text-slate-900">Create a product</h3>
-            <p className="mt-1 text-sm text-slate-500">Delivery type</p>
-            <div className="mt-3 space-y-2">
-              <div className="flex items-center gap-2 rounded-lg border-2 border-[#1f8fef] px-3 py-2.5 text-sm font-medium text-[#1f8fef]">
-                <span className="h-3.5 w-3.5 rounded-full border-2 border-[#1f8fef]" />
-                License key
-              </div>
-              {["Discord role", "File / link", "Manual ticket"].map((o) => (
-                <div
-                  key={o}
-                  className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-500"
-                >
-                  <span className="h-3.5 w-3.5 rounded-full border-2 border-slate-300" />
-                  {o}
-                </div>
-              ))}
-            </div>
-          </div>
+          <video
+            src="/hero-demo.mp4"
+            poster="/hero-demo-poster.jpg"
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="block w-full"
+          />
         </div>
       </div>
     </section>

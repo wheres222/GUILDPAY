@@ -27,12 +27,15 @@ function Cloud({ cx, cy, s = 1, o = 1 }: { cx: number; cy: number; s?: number; o
 export function LandingHero() {
   return (
     <section className="relative isolate overflow-hidden bg-white">
-      {/* Sky gradient (purple → white toward the bottom) */}
+      {/* Blue hero artwork + a top tint so the white headline stays legible. */}
       <div
         className="pointer-events-none absolute inset-0 -z-20"
         style={{
-          background:
-            "radial-gradient(125% 95% at 50% -10%, #7cc8ff 0%, #3aa3f4 32%, #1f86e6 52%, #4aa9f0 66%, #ffffff 100%)",
+          backgroundImage:
+            "linear-gradient(to bottom, rgba(31,134,230,0.45), rgba(58,163,244,0.18) 42%, rgba(255,255,255,0) 72%), url('/hero.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
         }}
       />
       {/* Clouds */}

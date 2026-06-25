@@ -126,6 +126,14 @@
     radial-gradient(45% 40% at 50% 55%, #9ccdff 0%, rgba(156, 205, 255, 0) 70%);
 }
 
+/* The exported blue hero artwork, used as a full-cover backdrop. */
+.hero-bg {
+  background-image: url("/hero.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 @theme inline {
   --font-sans: var(--font-inter), 'Inter', system-ui, sans-serif;
   --font-display: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;

@@ -1,15 +1,18 @@
-import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { SiteHeader } from "@/components/site-header"
 
 export default function DocsPage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-16 lg:px-8">
-        <h1 className="text-3xl font-bold text-foreground">Documentation</h1>
-        <p className="mt-4 text-muted-foreground">
-          Docs hub for bot setup, product management, checkout flow, and webhook events.
-        </p>
+    <div className="min-h-screen bg-white text-slate-900">
+      <SiteHeader
+        eyebrow="Docs"
+        title="Documentation"
+        subtitle="Bot setup, product management, checkout flow, and webhook events."
+      />
+      <main className="mx-auto -mt-16 max-w-3xl px-6 pb-24 sm:-mt-20">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-slate-600 shadow-sm">
+          The docs hub is coming soon. In the meantime, add the bot to your server and use the in-dashboard guides to get started.
+        </div>
       </main>
       <Footer />
     </div>

@@ -1,13 +1,14 @@
-import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { SiteHeader } from "@/components/site-header"
 
 export default function TermsPage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-16 lg:px-8">
-        <h1 className="text-3xl font-bold text-foreground">Terms of Service</h1>
-        <p className="mt-4 text-muted-foreground">Draft terms page. Replace with legal copy before launch.</p>
+    <div className="min-h-screen bg-white text-slate-900">
+      <SiteHeader eyebrow="Legal" title="Terms of Service" subtitle="The terms that govern your use of GuildPay." />
+      <main className="mx-auto -mt-16 max-w-3xl px-6 pb-24 sm:-mt-20">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-slate-600 shadow-sm">
+          Draft terms of service. Replace with your finalized legal copy before launch.
+        </div>
       </main>
       <Footer />
     </div>

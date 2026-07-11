@@ -1,13 +1,14 @@
-import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { SiteHeader } from "@/components/site-header"
 
 export default function BlogPage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-16 lg:px-8">
-        <h1 className="text-3xl font-bold text-foreground">Blog</h1>
-        <p className="mt-4 text-muted-foreground">Guides, updates, and launch notes.</p>
+    <div className="min-h-screen bg-white text-slate-900">
+      <SiteHeader eyebrow="Blog" title="Guides & updates" subtitle="Product guides, launch notes, and news from GuildPay." />
+      <main className="mx-auto -mt-16 max-w-3xl px-6 pb-24 sm:-mt-20">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-slate-600 shadow-sm">
+          Posts are coming soon. Follow along in our Discord for the latest updates.
+        </div>
       </main>
       <Footer />
     </div>
